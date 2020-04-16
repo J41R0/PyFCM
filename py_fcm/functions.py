@@ -7,25 +7,20 @@ class Exitation:
     """
     All execution function must get a node as parameter
     """
-
+    # node: node dict for all functions
     @staticmethod
     def kosko(node):
-        # node: node dict
         # f(sum(wij * Ai) + Aj)
-
         neighbors_val = node[NODE_AUX]
         node_val = node[NODE_VALUE]
         use_memory = node[NODE_USE_MEM]
         res = sum(neighbors_val)
         if use_memory:
             res += node_val
-        # return res / (len(neighbors_val) + 1)
         return res
 
     @staticmethod
     def papageorgius(node):
-        # TODO: Update kosko implementation
-
         neighbors_val = node[NODE_AUX]
         node_val = node[NODE_VALUE]
         use_memory = node[NODE_USE_MEM]
@@ -36,7 +31,6 @@ class Exitation:
 
     @staticmethod
     def mean(node):
-        # node: node dict
         total = len(node[NODE_AUX])
         res = sum(node[NODE_AUX])
         if node[NODE_USE_MEM]:
