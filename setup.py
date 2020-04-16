@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='PyFCM',
+    name='Py_FCM',
     version='0.1',
     scripts=[],
     author="Jairo Lefebre",
