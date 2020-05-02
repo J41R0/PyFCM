@@ -1,3 +1,4 @@
+import json
 import random
 
 import networkx as nx
@@ -10,8 +11,8 @@ from py_fcm.__const import *
 
 class FuzzyCognitiveMap:
 
-    def __init__(self, max_it=200, extra_steps=5, stabilize=True, stab_diff=0.001, decision="average",
-                 mem_influence=True, activ_function="sigmoid", lazy_execution=False, **kwargs):
+    def __init__(self, max_it=200, extra_steps=5, stabilize=True, stab_diff=0.001, result="average",
+                 mem_influence=True, activ_function="sigmoid", **kwargs):
         """
         Fuzzy Cognitive Map Class, may be used like estimator.
         Args:
@@ -19,7 +20,7 @@ class FuzzyCognitiveMap:
             extra_steps: Extra inference steps after end iterations
             stabilize: Exec map until stabilize
             stab_diff: Stability threshold value
-            decision: Method for select winner decision node by its values during execution.
+            result: Method for select winner decision node by its values during execution.
                 last: Last inference node value
                 average: Highest average of all execution values in decision nodes
                 exited: Highest last execution value in decision nodes
@@ -58,26 +59,23 @@ class FuzzyCognitiveMap:
         # self.init_activation = init_activ
         # TODO: parametrize function per output feature
         # Function to compute decision or regresor nodes, last
-        if decision == "last":
+        if result == "last":
             self.estimate_desc_func = self.__last
-        if decision == "average":
+        if result == "average":
             self.estimate_desc_func = self.__average
-        if decision == "exited":
+        if result == "exited":
             self.estimate_desc_func = self.__exited
         # memory influence flag
         self.flag_mem_influence = mem_influence
         # Activation function definition
         self.global_function = self.__get_actv_func_by_name(activ_function)
 
-        # lazy execution
-        self.lazy_exec = lazy_execution
-
         # Set global function arguments
         self.global_func_args = kwargs
         # map iterations
         self.iterations = 1
 
-    def add_concept(self, concept, node_type=TYPE_SIMPLE, is_active=True, use_memory=None, exec_function='KOSKO',
+    def add_concept(self, concept, node_type=TYPE_SIMPLE, is_active=True, use_memory=None, exitation_function='KOSKO',
                     activation_dict=None, activ_function=None, **kwargs):
         """
         Add new concept to map
@@ -86,17 +84,17 @@ class FuzzyCognitiveMap:
             node_type: Define type of node and behavior
             is_active: Define if node is active or not
             use_memory: Use memory in activation node process
-            exec_function: Custom function name for execution process
+            exitation_function: Custom function name for execution process
             activ_function: Callable function for node activation, if none set global function
             activation_dict: activation dic for cont concepts according to found clusters in way =>
                 {'membership': [], 'val_list': []} and related by position.
-            **kwargs: arguments for activtion function
+            **kwargs: arguments for activation function
 
         Returns: None
 
         """
         self.topology[concept] = {NODE_ACTIVE: is_active, NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
-        self.topology[concept][NODE_EXEC_FUNC] = self.__get_exec_func_by_name(exec_function)
+        self.topology[concept][NODE_EXEC_FUNC] = self.__get_exec_func_by_name(exitation_function)
         self.topology[concept][NODE_TYPE] = node_type
         # define result function
         # self.topology[concept][NODE_RES_FUNC] = result_function
@@ -133,18 +131,6 @@ class FuzzyCognitiveMap:
             self.topology[concept][NODE_ACTV_FUNC_ARGS] = self.global_func_args
 
         self.execution[concept] = [0.0]
-
-    def est_concept_func_args(self, concept, x_val, y_val):
-        con_func = self.topology[concept][NODE_ACTV_FUNC]
-        kwargs = {}
-        if con_func == Activation.sigmoid:
-            lambda_val = Activation.sigmoid_lambda(x_val, y_val)
-            kwargs["lambda_val"] = lambda_val
-
-        if con_func == Activation.sigmoid_hip:
-            lambda_val = Activation.sigmoid_hip_lambda(x_val, y_val)
-            kwargs["lambda_val"] = lambda_val
-        self.topology[concept][NODE_ACTV_FUNC_ARGS] = kwargs
 
     def add_relation(self, origin, destiny, weight):
         """
@@ -427,8 +413,118 @@ class FuzzyCognitiveMap:
         result = ""
         for relation in self.__arc_list:
             result += relation[ARC_ORIGIN] + " -> (" + str(relation[ARC_WEIGHT]) + ") -> " + relation[
-                ARC_DESTINY] + "\n"
+                ARC_DESTINY] + ""
         return result
+
+    @staticmethod
+    def from_json(str_json):
+        """
+        Function to genrate a FCM object form a JSON like:
+        {
+         "iter": 500,
+         "activation_function": "sigmoid",
+         "actv_func_params": {"lambda_val":1},
+         "memory_influence": false,
+         "result": "last",
+         "concepts" :
+          [
+            {"id": "concept_1", "type": "SIMPLE", "activation": 0.5},
+            {"id": "concept_2", "type": "DECISION", "custom_function": "sum_w", "custom_func_args": {"weight":0.3}},
+            {"id": "concept_3", "type": "SIMPLE", "memory_influence":true },
+            {"id": "concept_4", "type": "SIMPLE", "custom_function": "saturation", "activation": 0.3}
+          ],
+         "relations":
+          [
+            {"origin": "concept_4", "destiny": "concept_2", "weight": -0.1},
+            {"origin": "concept_1", "destiny": "concept_3", "weight": 0.59},
+            {"origin": "concept_3", "destiny": "concept_2", "weight": 0.8911}
+          ]
+        }
+        Structure:
+        * iter: max map iterations
+        * activation_function: defalt activation function
+        * actv_func_params: object (JSON serializable) to describe required function params
+        * memory_influence: use memory or not
+        * result: define the resutl value => "last": last inference value, "average": whole execution average value
+        * concepts: a concept list describing each concept
+        * relations: a relations list between defined concepts
+
+        Concept descrption:
+        * id: concept id
+        * type: node type => "SIMPLE": regular node and default ,"DECISION": target for a classification problems
+        * active: define if node is active or not, by default is considered active
+        * custom_function: custom node function, by default use map defined function
+        * custom_func_args: object (JSON serializable) to describe custom_function params
+        * memory_influence: use memory or not, by default use FCM memory definition
+        * exitation_function: node exitation function, KOSKO by default
+        * activation: initial node activation value, by default 0
+
+        Relation descrption:
+        * origin: start concept id
+        * destiny: destiny concept id
+        * weight: relaion weight in range => [-1,1]
+
+        Exitation functions:
+        * "MEAN": Mean values of all neighbors that influence the node
+        * "KOSKO": B. Kosko proposed activation function
+        * "PAPAGEORGIUS": E. Papageorgius proposed function to avoid saturation
+
+        Activation functions:
+        * "saturation": 1 if value is > 1, 0 if values is < 0 and value otherwise. Domain => [0,1]
+        * "biestate": 1 if value is > 0, 0 otherwise. Domain => {0,1}
+        * "threestate": 0 if value is < 0.25, 0.5 if 0.25 <= value <= 0.75, 1 otherwise. Domain => {0,0.5,1}
+        * "sum_w": weight(float), return value if > weight, 0 otherwise. Domain => [-1,1]
+        * "sigmoid": lambda_val(int), sigmoid function => [0,1]
+        * "sigmoid_hip": lambda_val(int), sigmoid hyperbolic function => [-1,1]
+
+        Args:
+            str_json: string JSON
+
+        Returns: FCM object
+
+        """
+        try:
+            data_dict = json.loads(str_json)
+            actv_param = {}
+            if 'actv_func_params' in data_dict:
+                actv_param = data_dict['actv_func_params']
+            my_fcm = FuzzyCognitiveMap(max_it=data_dict['iter'],
+                                       result=data_dict['result'],
+                                       mem_influence=data_dict['memory_influence'],
+                                       activ_function=data_dict['activation_function'],
+                                       **actv_param)
+            # adding concepts
+            for concept in data_dict['concepts']:
+                use_mem = None
+                if 'memory_influence' in concept:
+                    use_mem = concept['memory_influence']
+                exitation = 'KOSKO'
+                if 'exitation_function' in concept:
+                    exitation = concept['exitation_function']
+                active = True
+                if 'active' in concept:
+                    active = concept['active']
+                custom_function = None
+                if 'custom_function' in concept:
+                    custom_function = concept['custom_function']
+                custom_func_args = {}
+                if 'custom_func_args' in concept:
+                    custom_func_args = concept['custom_func_args']
+                my_fcm.add_concept(concept['id'],
+                                   node_type=concept['type'],
+                                   is_active=active,
+                                   use_memory=use_mem,
+                                   exitation_function=exitation,
+                                   activ_function=custom_function,
+                                   **custom_func_args)
+            # adding relations
+            for relation in data_dict['relations']:
+                my_fcm.add_relation(origin=relation['origin'],
+                                    destiny=relation['destiny'],
+                                    weight=relation['weight'])
+            return my_fcm
+        except Exception as err:
+            raise Exception("Cannot load json data due: " + str(err))
 
     # decision functions
     def __last(self, val_list):
@@ -493,10 +589,10 @@ class FuzzyCognitiveMap:
     def __get_exec_func_by_name(self, func_name):
         if func_name == "KOSKO":
             return Exitation.kosko
+        if func_name == "PAPAGEORGIUS":
+            return Exitation.papageorgius
         if func_name == "MEAN":
             return Exitation.mean
-        if func_name == "DIM_EVENT":
-            return Exitation.actv_dim_event
 
     def __find_related_concept_type(self, name):
         """
@@ -528,3 +624,15 @@ class FuzzyCognitiveMap:
             if name in concept:
                 result.append(concept)
         return result
+
+    def __est_concept_func_args(self, concept, x_val, y_val):
+        con_func = self.topology[concept][NODE_ACTV_FUNC]
+        kwargs = {}
+        if con_func == Activation.sigmoid:
+            lambda_val = Activation.sigmoid_lambda(x_val, y_val)
+            kwargs["lambda_val"] = lambda_val
+
+        if con_func == Activation.sigmoid_hip:
+            lambda_val = Activation.sigmoid_hip_lambda(x_val, y_val)
+            kwargs["lambda_val"] = lambda_val
+        self.topology[concept][NODE_ACTV_FUNC_ARGS] = kwargs

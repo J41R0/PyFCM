@@ -7,6 +7,7 @@ class Exitation:
     """
     All exitation functions must get a node as parameter
     """
+
     # node: node dict for all functions
     @staticmethod
     def kosko(node):
@@ -24,6 +25,7 @@ class Exitation:
 
     @staticmethod
     def papageorgius(node):
+        # to avoid saturation
         neighbors_val = node[NODE_AUX]
         node_val = node[NODE_VALUE]
         use_memory = node[NODE_USE_MEM]
@@ -43,22 +45,8 @@ class Exitation:
             return 0
         return res / total
 
-    @staticmethod
-    def actv_dim_event(node):
-        no_zero_count = 0
-        for val in node[NODE_AUX]:
-            if val > 0:
-                no_zero_count += 1
-        if no_zero_count == len(node[NODE_AUX]):
-            node[NODE_ACTIVE] = True
-        return node[NODE_VALUE]
-
 
 class Activation:
-    @staticmethod
-    def sigmoid1(val, amp=1):
-        return 1.0 / (1.0 + exp((-1 * amp) * (val - 0.5)))
-
     @staticmethod
     def sigmoid(val, lambda_val=1):
         return 1.0 / (1.0 + exp(-1 * lambda_val * val))
@@ -70,7 +58,7 @@ class Activation:
 
     @staticmethod
     def sigmoid_hip(val, lambda_val=2):
-        # avoiding errors
+        # avoiding estimation errors
         if (-1 * lambda_val * val) > 500:
             return (1.0 - exp(500)) / (1.0 + exp(500))
         else:
@@ -109,6 +97,8 @@ class Activation:
         if val >= weight:
             if val > 1:
                 return 1
+            if val < -1:
+                return -1
             return val
         return 0
 
@@ -117,6 +107,8 @@ class Activation:
         prop = (max_prop * val) / max_val
         if prop > 1:
             return 1
+        if prop < -1:
+            return -1
         return prop
 
     @staticmethod
