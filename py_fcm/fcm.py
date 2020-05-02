@@ -77,33 +77,6 @@ class FuzzyCognitiveMap:
         # map iterations
         self.iterations = 1
 
-    def __get_actv_func_by_name(self, func_name):
-        # Activation function definition
-        if func_name == "biestate":
-            return Activation.bistate
-        if func_name == "threestate":
-            return Activation.tristate
-        if func_name == "saturation":
-            return Activation.saturation
-        if func_name == "tan_hip":
-            return Activation.sigmoid_hip
-        if func_name == "sigmoid":
-            return Activation.sigmoid
-        if func_name == "sigmoid_hip":
-            return Activation.sigmoid_hip
-        if func_name == "sum_w":
-            return Activation.sum_w
-        if func_name == "proportion":
-            return Activation.proportion
-
-    def __get_exec_func_by_name(self, func_name):
-        if func_name == "KOSKO":
-            return Exitation.kosko
-        if func_name == "MEAN":
-            return Exitation.mean
-        if func_name == "DIM_EVENT":
-            return Exitation.actv_dim_event
-
     def add_concept(self, concept, node_type=TYPE_SIMPLE, is_active=True, use_memory=None, exec_function='KOSKO',
                     activation_dict=None, activ_function=None, **kwargs):
         """
@@ -160,37 +133,6 @@ class FuzzyCognitiveMap:
             self.topology[concept][NODE_ACTV_FUNC_ARGS] = self.global_func_args
 
         self.execution[concept] = [0.0]
-
-    def __find_related_concept_type(self, name):
-        """
-        Get the data related to first concept where <name> is a substring
-        Args:
-            name: concept name
-
-        Returns: Found concept type, None otherwise
-
-        """
-        concepts_list = list(self.topology.keys())
-        for concept in concepts_list:
-            if name in concept:
-                return self.topology[concept][NODE_TYPE]
-        return None
-
-    def __get_related_concepts_names(self, name):
-        """
-        Search for all concepts where <name> is a substring
-        Args:
-            name: concept name
-
-        Returns: Associated concept list
-
-        """
-        result = []
-        concepts_list = list(self.topology.keys())
-        for concept in concepts_list:
-            if name in concept:
-                result.append(concept)
-        return result
 
     def est_concept_func_args(self, concept, x_val, y_val):
         con_func = self.topology[concept][NODE_ACTV_FUNC]
@@ -284,18 +226,6 @@ class FuzzyCognitiveMap:
                         type(value)) + "'")
         else:
             raise Warning("Concepts related to feature '" + feature + "' are not defined in FCM topology.")
-
-    def __keep_execution(self):
-        """
-        Define if the inference process must go on
-        Returns: True if needs other inference step, False otherwise
-
-        """
-        if self.iterations >= self.max_iter:
-            return False
-        if self.flag_stop_at_stabilize:
-            return not self.is_stable()
-        return True
 
     def is_stable(self):
         """
@@ -443,14 +373,6 @@ class FuzzyCognitiveMap:
             result[feat] = value
         return result
 
-    def __fit(self, x, y):
-        # TODO
-        raise NotImplementedError("Require a FCM topology generator")
-
-    def __score(self, x, y, plot=False):
-        # TODO
-        raise NotImplementedError("Scorer not defined")
-
     def predict(self, x, plot=False):
         result = []
         x_df = DataFrame(x)
@@ -491,6 +413,23 @@ class FuzzyCognitiveMap:
         plt.savefig(path + fig_name + '.png')
         plt.close()
 
+    def plot_topology(self, path='plot/', fig_name="topology"):
+        graph = nx.Graph()
+        graph.add_nodes_from(self.topology.keys())
+        for key in self.topology.keys():
+            for out_node in self.topology[key][NODE_ARCS]:
+                graph.add_edge(key, out_node[ARC_DESTINY])
+        nx.draw(graph)
+        plt.savefig(path + fig_name + ".png")
+        plt.close()
+
+    def realations_to_string(self):
+        result = ""
+        for relation in self.__arc_list:
+            result += relation[ARC_ORIGIN] + " -> (" + str(relation[ARC_WEIGHT]) + ") -> " + relation[
+                ARC_DESTINY] + "\n"
+        return result
+
     # decision functions
     def __last(self, val_list):
         # return last value
@@ -511,19 +450,81 @@ class FuzzyCognitiveMap:
                 result = elem
         return result
 
-    def plot_topology(self, path='plot/', fig_name="topology"):
-        graph = nx.Graph()
-        graph.add_nodes_from(self.topology.keys())
-        for key in self.topology.keys():
-            for out_node in self.topology[key][NODE_ARCS]:
-                graph.add_edge(key, out_node[ARC_DESTINY])
-        nx.draw(graph)
-        plt.savefig(path + fig_name + ".png")
-        plt.close()
+    # private functions
+    def __fit(self, x, y):
+        # TODO
+        raise NotImplementedError("Require a FCM topology generator")
 
-    def realations_to_string(self):
-        result = ""
-        for relation in self.__arc_list:
-            result += relation[ARC_ORIGIN] + " -> (" + str(relation[ARC_WEIGHT]) + ") -> " + relation[
-                ARC_DESTINY] + "\n"
+    def __score(self, x, y, plot=False):
+        # TODO
+        raise NotImplementedError("Scorer not defined")
+
+    def __keep_execution(self):
+        """
+        Define if the inference process must go on
+        Returns: True if needs other inference step, False otherwise
+
+        """
+        if self.iterations >= self.max_iter:
+            return False
+        if self.flag_stop_at_stabilize:
+            return not self.is_stable()
+        return True
+
+    def __get_actv_func_by_name(self, func_name):
+        # Activation function definition
+        if func_name == "biestate":
+            return Activation.bistate
+        if func_name == "threestate":
+            return Activation.tristate
+        if func_name == "saturation":
+            return Activation.saturation
+        if func_name == "tan_hip":
+            return Activation.sigmoid_hip
+        if func_name == "sigmoid":
+            return Activation.sigmoid
+        if func_name == "sigmoid_hip":
+            return Activation.sigmoid_hip
+        if func_name == "sum_w":
+            return Activation.sum_w
+        if func_name == "proportion":
+            return Activation.proportion
+
+    def __get_exec_func_by_name(self, func_name):
+        if func_name == "KOSKO":
+            return Exitation.kosko
+        if func_name == "MEAN":
+            return Exitation.mean
+        if func_name == "DIM_EVENT":
+            return Exitation.actv_dim_event
+
+    def __find_related_concept_type(self, name):
+        """
+        Get the data related to first concept where <name> is a substring
+        Args:
+            name: concept name
+
+        Returns: Found concept type, None otherwise
+
+        """
+        concepts_list = list(self.topology.keys())
+        for concept in concepts_list:
+            if name in concept:
+                return self.topology[concept][NODE_TYPE]
+        return None
+
+    def __get_related_concepts_names(self, name):
+        """
+        Search for all concepts where <name> is a substring
+        Args:
+            name: concept name
+
+        Returns: Associated concept list
+
+        """
+        result = []
+        concepts_list = list(self.topology.keys())
+        for concept in concepts_list:
+            if name in concept:
+                result.append(concept)
         return result

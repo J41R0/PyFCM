@@ -5,12 +5,15 @@ from py_fcm.__const import *
 
 class Exitation:
     """
-    All execution function must get a node as parameter
+    All exitation functions must get a node as parameter
     """
     # node: node dict for all functions
     @staticmethod
     def kosko(node):
-        # f(sum(wij * Ai) + Aj)
+        """ TeX functions:
+        not memory: A^{(t+1)}_i = f\left(\sum_{j=1}^N w_{ij}*A^{(t)}_j \right) , i \neq j
+        use memory: A^{(t+1)}_i = f\left(A^{(t)}_i+\sum_{j=1}^N w_{ij}*A^{(t)}_j \right) , i \neq j
+        """
         neighbors_val = node[NODE_AUX]
         node_val = node[NODE_VALUE]
         use_memory = node[NODE_USE_MEM]
