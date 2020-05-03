@@ -60,11 +60,11 @@ class FuzzyCognitiveMap:
         # TODO: parametrize function per output feature
         # Function to compute decision or regresor nodes, last
         if result == "last":
-            self.estimate_desc_func = self.__last
+            self.decision_function = self.__last
         if result == "average":
-            self.estimate_desc_func = self.__average
+            self.decision_function = self.__average
         if result == "exited":
-            self.estimate_desc_func = self.__exited
+            self.decision_function = self.__exited
         # memory influence flag
         self.flag_mem_influence = mem_influence
         # Activation function definition
@@ -74,6 +74,9 @@ class FuzzyCognitiveMap:
         self.global_func_args = kwargs
         # map iterations
         self.iterations = 1
+
+        # str separator for datasets
+        self.separator = None
 
     def add_concept(self, concept, node_type=TYPE_SIMPLE, is_active=True, use_memory=None, exitation_function='KOSKO',
                     activation_dict=None, activ_function=None, **kwargs):
@@ -149,7 +152,7 @@ class FuzzyCognitiveMap:
 
     def clear(self):
         """
-        Reset execution, and graph relations
+        Reset whole data in map
         Returns: None
 
         """
@@ -158,60 +161,21 @@ class FuzzyCognitiveMap:
         self.__arc_list = []
         self.execution = {}
 
-    def init_concept(self, concept, value, lazzy_init=False):
+    def init_concept(self, concept_id, value, lazzy_init=False):
         """
 
         Set concept initial value, by default 1
         Args:
-            concept: Concept name
+            concept_id: Concept name
             value: Feature value
 
         Returns: None
 
         """
         if lazzy_init:
-            self.topology[concept][NODE_AUX].append(value)
+            self.topology[concept_id][NODE_AUX].append(value)
         else:
-            self.topology[concept][NODE_VALUE] = value
-
-    def init_from_ds(self, feature, value):
-        """
-        Init dataset feature associated concept
-        Args:
-            feature: feature name
-            value: Feature value
-
-        Returns: None
-
-        """
-        concept_type = self.__find_related_concept_type(feature)
-        if concept_type:
-            processed = False
-            if concept_type != TYPE_REGRESOR and concept_type != TYPE_FUZZY and type(value) == str:
-                # init all discrete concepts value, estimating the concept name
-                disc_concept_name = str(value) + self.sep + feature
-                if self.__find_related_concept_type(disc_concept_name):
-                    self.topology[disc_concept_name][NODE_VALUE] = 1
-                    self.execution[disc_concept_name] = [1]
-                    processed = True
-                else:
-                    Warning("Concept '" + disc_concept_name + "' not defined in FCM topology.")
-            else:
-                related_concepts = self.__get_related_concepts_names(feature)
-                for concept in related_concepts:
-                    activation_value = Fuzzy.fuzzyfication(value,
-                                                           self.topology[concept][NODE_TRAIN_MIN],
-                                                           self.topology[concept][NODE_TRAIN_FMAX],
-                                                           **self.topology[concept][NODE_TRAIN_ACTIVATION])
-                    self.topology[concept][NODE_VALUE] = activation_value
-                    self.execution[concept] = [activation_value]
-                processed = True
-            if not processed:
-                raise Exception(
-                    "Error processing value " + str(value) + " from feature '" + feature + "' and type '" + str(
-                        type(value)) + "'")
-        else:
-            raise Warning("Concepts related to feature '" + feature + "' are not defined in FCM topology.")
+            self.topology[concept_id][NODE_VALUE] = value
 
     def is_stable(self):
         """
@@ -286,102 +250,50 @@ class FuzzyCognitiveMap:
 
             self.iterations += 1
 
-    def estimate(self):
-        # group execution results by feature
-        # exec_res = {'feature_name':[{'concept_name',[<exec_val_list>]}, ...]}
-        exec_res = {}
-        for concept in self.execution.keys():
-            if self.topology[concept][NODE_TYPE] == TYPE_DECISION or self.topology[concept][NODE_TYPE] == TYPE_REGRESOR:
-                feat_name = str(concept).split(self.sep)[-1]
-                if feat_name in exec_res.keys():
-                    exec_res[feat_name].append({concept: self.execution[concept]})
-                else:
-                    exec_res[feat_name] = []
-                    exec_res[feat_name].append({concept: self.execution[concept]})
+    def search_result_by_id(self, concept_id):
+        """
+        Get inference result values by node id
+        Args:
+            concept_id: single id or id list, each id could be a sub str from stored id
 
-        # estimate result for each concept set associated to target feature
+        Returns:
+
+        """
         result = {}
-        for feat in exec_res.keys():
-            value = None
-            # TODO: estimate value for each target feature
-            # all concepts in feature share the same type
-            some_concept_name = list(exec_res[feat][0].keys())[0]
-
-            # Estimate discrete result
-            if self.topology[some_concept_name][NODE_TYPE] == TYPE_DECISION:
-                # solving by concept
-                class_name = ""
-                for concept_data in exec_res[feat]:
-                    concept_name = list(concept_data.keys())[0]
-                    if self.is_stable():
-                        res = self.__last(self.execution[concept_name])
-                    else:
-                        res = self.estimate_desc_func(self.execution[concept_name])
-                    # select gratest result value
-                    if value is None:
-                        value = res
-                        class_name = str(concept_name).split(self.sep)[0]
-                    elif value < res:
-                        value = res
-                        class_name = str(concept_name).split(self.sep)[0]
-                        # the class is the result
-                value = class_name
-
-            # Estimate continous result
-            if self.topology[some_concept_name][NODE_TYPE] == TYPE_REGRESOR:
-                candidates = []
-                for concept_data in exec_res[feat]:
-                    concept_name = list(concept_data.keys())[0]
-                    res = self.estimate_desc_func(self.execution[concept_name])
-                    candidates.extend(Fuzzy.defuzzyfication(res,
-                                                            self.topology[concept_name][NODE_TRAIN_MIN],
-                                                            self.topology[concept_name][NODE_TRAIN_FMAX],
-                                                            **self.topology[concept_name][NODE_TRAIN_ACTIVATION]))
-                # search minimum size interval
-                candidates.sort()
-                if len(candidates) == 0:
-                    raise Exception("Cannot estimate membership value " + str(res) + " in concept " + concept_name)
-                # print(candidates)
-                res = (0, len(candidates) - 1)
-                size = candidates[-1] - candidates[0]
-                for pos in range(len(candidates) - len(exec_res[feat])):
-                    first = candidates[pos]
-                    last = candidates[pos + len(exec_res[feat]) - 1]
-                    if last - first <= size:
-                        size = last - first
-                        res = (pos, pos + len(exec_res[feat]) - 1)
-
-                # define final result as mean of nearest estimation
-                value = 0
-                for pos in range(res[0], res[1] + 1):
-                    value += candidates[pos]
-                value = value / len(exec_res[feat])
-            result[feat] = value
+        if type(concept_id) == list:
+            for concept_id, exec_values in self.execution.items():
+                if concept_id in concept_id:
+                    result[concept_id] = self.decision_function(exec_values)
+        else:
+            for concept_id, exec_values in self.execution.items():
+                if concept_id in concept_id:
+                    result[concept_id] = self.decision_function(exec_values)
         return result
 
-    def predict(self, x, plot=False):
-        result = []
-        x_df = DataFrame(x)
-        plot_it = 0
-        for index, row in x_df.iterrows():
-            plot_it += 1
-            # init map from data
-            self.clear_execution()
-            for feature in x_df:
-                self.reset_execution()
-                try:
-                    self.init_from_ds(feature, row[feature])
-                except Exception as err:
-                    raise Exception("Can not init concept related to feature '" + feature + "' due: " + str(err))
-            self.run()
-            res = self.estimate()
-            res = res[list(res.keys())[0]]
-            result.append(res)
-            if plot:
-                self.plot_execution(fig_name="map" + str(plot_it), limit=50)
+    def get_result_by_type(self, node_type="end"):
+        """
+        Get inference result values of node_type or all nodes
+        Args:
+            node_type: Type of nodes inference result
+                "all": calc all nodes final state
+                "end": calc regression or decision nodes final state
+
+        Returns: Dict in way: {"<node_id>": <final_value>}
+
+        """
+        result = {}
+        for concept_id in self.execution.keys():
+            if node_type == "all":
+                result[concept_id] = self.decision_function(self.execution[concept_id])
+            if node_type == "end":
+                if (self.topology[concept_id][NODE_TYPE] == TYPE_DECISION
+                        or self.topology[concept_id][NODE_TYPE] == TYPE_REGRESOR):
+                    result[concept_id] = self.decision_function(self.execution[concept_id])
+            elif self.topology[concept_id][NODE_TYPE] == node_type:
+                result[concept_id] = self.decision_function(self.execution[concept_id])
         return result
 
-    def plot_execution(self, fig_name="map", limit=0, plot_all=False, path="plot/"):
+    def plot_execution(self, fig_name="map", limit=0, plot_all=False, path=""):
         colors = ['b', 'orange', 'g', 'r', 'c', 'm', 'y', 'k', 'Brown', 'ForestGreen']
         for node in self.execution.keys():
             end = len(self.execution[node])
@@ -399,7 +311,7 @@ class FuzzyCognitiveMap:
         plt.savefig(path + fig_name + '.png')
         plt.close()
 
-    def plot_topology(self, path='plot/', fig_name="topology"):
+    def plot_topology(self, path='', fig_name="topology"):
         graph = nx.Graph()
         graph.add_nodes_from(self.topology.keys())
         for key in self.topology.keys():
@@ -555,6 +467,101 @@ class FuzzyCognitiveMap:
         # TODO
         raise NotImplementedError("Scorer not defined")
 
+    def __estimate(self):
+        # group execution results by feature
+        # exec_res = {'feature_name':[{'concept_name',[<exec_val_list>]}, ...]}
+        exec_res = {}
+        for concept in self.execution.keys():
+            if self.topology[concept][NODE_TYPE] == TYPE_DECISION or self.topology[concept][NODE_TYPE] == TYPE_REGRESOR:
+                feat_name = str(concept).split(self.sep)[-1]
+                if feat_name in exec_res.keys():
+                    exec_res[feat_name].append({concept: self.execution[concept]})
+                else:
+                    exec_res[feat_name] = []
+                    exec_res[feat_name].append({concept: self.execution[concept]})
+
+        # estimate result for each concept set associated to target feature
+        result = {}
+        for feat in exec_res.keys():
+            value = None
+            # TODO: estimate value for each target feature
+            # all concepts in feature share the same type
+            some_concept_name = list(exec_res[feat][0].keys())[0]
+
+            # Estimate discrete result
+            if self.topology[some_concept_name][NODE_TYPE] == TYPE_DECISION:
+                # solving by concept
+                class_name = ""
+                for concept_data in exec_res[feat]:
+                    concept_name = list(concept_data.keys())[0]
+                    if self.is_stable():
+                        res = self.__last(self.execution[concept_name])
+                    else:
+                        res = self.estimate_desc_func(self.execution[concept_name])
+                    # select gratest result value
+                    if value is None:
+                        value = res
+                        class_name = str(concept_name).split(self.sep)[0]
+                    elif value < res:
+                        value = res
+                        class_name = str(concept_name).split(self.sep)[0]
+                        # the class is the result
+                value = class_name
+
+            # Estimate continous result
+            if self.topology[some_concept_name][NODE_TYPE] == TYPE_REGRESOR:
+                candidates = []
+                for concept_data in exec_res[feat]:
+                    concept_name = list(concept_data.keys())[0]
+                    res = self.estimate_desc_func(self.execution[concept_name])
+                    candidates.extend(Fuzzy.defuzzyfication(res,
+                                                            self.topology[concept_name][NODE_TRAIN_MIN],
+                                                            self.topology[concept_name][NODE_TRAIN_FMAX],
+                                                            **self.topology[concept_name][NODE_TRAIN_ACTIVATION]))
+                # search minimum size interval
+                candidates.sort()
+                if len(candidates) == 0:
+                    raise Exception("Cannot estimate membership value " + str(res) + " in concept " + concept_name)
+                # print(candidates)
+                res = (0, len(candidates) - 1)
+                size = candidates[-1] - candidates[0]
+                for pos in range(len(candidates) - len(exec_res[feat])):
+                    first = candidates[pos]
+                    last = candidates[pos + len(exec_res[feat]) - 1]
+                    if last - first <= size:
+                        size = last - first
+                        res = (pos, pos + len(exec_res[feat]) - 1)
+
+                # define final result as mean of nearest estimation
+                value = 0
+                for pos in range(res[0], res[1] + 1):
+                    value += candidates[pos]
+                value = value / len(exec_res[feat])
+            result[feat] = value
+        return result
+
+    def __predict(self, x, plot=False):
+        result = []
+        x_df = DataFrame(x)
+        plot_it = 0
+        for index, row in x_df.iterrows():
+            plot_it += 1
+            # init map from data
+            self.clear_execution()
+            for feature in x_df:
+                self.reset_execution()
+                try:
+                    self.init_from_ds(feature, row[feature])
+                except Exception as err:
+                    raise Exception("Can not init concept related to feature '" + feature + "' due: " + str(err))
+            self.run()
+            res = self.__estimate()
+            res = res[list(res.keys())[0]]
+            result.append(res)
+            if plot:
+                self.plot_execution(fig_name="map" + str(plot_it), limit=50)
+        return result
+
     def __keep_execution(self):
         """
         Define if the inference process must go on
@@ -636,3 +643,43 @@ class FuzzyCognitiveMap:
             lambda_val = Activation.sigmoid_hip_lambda(x_val, y_val)
             kwargs["lambda_val"] = lambda_val
         self.topology[concept][NODE_ACTV_FUNC_ARGS] = kwargs
+
+    def __init_from_ds(self, feature, value, separator='_'):
+        """
+        Init dataset feature associated concept
+        Args:
+            feature: feature name
+            value: Feature value
+
+        Returns: None
+
+        """
+        self.separator = separator
+        concept_type = self.__find_related_concept_type(feature)
+        if concept_type:
+            processed = False
+            if concept_type != TYPE_REGRESOR and concept_type != TYPE_FUZZY and type(value) == str:
+                # init all discrete concepts value, estimating the concept name
+                disc_concept_name = str(value) + self.separator + feature
+                if self.__find_related_concept_type(disc_concept_name):
+                    self.topology[disc_concept_name][NODE_VALUE] = 1
+                    self.execution[disc_concept_name] = [1]
+                    processed = True
+                else:
+                    Warning("Concept '" + disc_concept_name + "' not defined in FCM topology.")
+            else:
+                related_concepts = self.__get_related_concepts_names(feature)
+                for concept in related_concepts:
+                    activation_value = Fuzzy.fuzzyfication(value,
+                                                           self.topology[concept][NODE_TRAIN_MIN],
+                                                           self.topology[concept][NODE_TRAIN_FMAX],
+                                                           **self.topology[concept][NODE_TRAIN_ACTIVATION])
+                    self.topology[concept][NODE_VALUE] = activation_value
+                    self.execution[concept] = [activation_value]
+                processed = True
+            if not processed:
+                raise Exception(
+                    "Error processing value " + str(value) + " from feature '" + feature + "' and type '" + str(
+                        type(value)) + "'")
+        else:
+            raise Warning("Concepts related to feature '" + feature + "' are not defined in FCM topology.")
