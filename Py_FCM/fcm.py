@@ -5,8 +5,8 @@ import networkx as nx
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 
-from py_fcm.functions import Activation, Fuzzy, Exitation
-from py_fcm.__const import *
+from Py_FCM.functions import Activation, Fuzzy, Exitation
+from Py_FCM.__const import *
 
 
 class FuzzyCognitiveMap:

@@ -1,6 +1,6 @@
 import math
 from math import exp
-from py_fcm.__const import *
+from Py_FCM.__const import *
 
 
 class Exitation:
