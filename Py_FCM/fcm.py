@@ -221,7 +221,7 @@ class FuzzyCognitiveMap:
             data[NODE_VALUE] = 0
             self.execution[node] = [0]
 
-    def run(self, reset=True):
+    def run_inference(self, reset=True):
         """
         Execute map inference process
         Returns: None
@@ -559,7 +559,7 @@ class FuzzyCognitiveMap:
                     self.init_from_ds(feature, row[feature])
                 except Exception as err:
                     raise Exception("Can not init concept related to feature '" + feature + "' due: " + str(err))
-            self.run()
+            self.run_inference()
             res = self.__estimate()
             res = res[list(res.keys())[0]]
             result.append(res)
