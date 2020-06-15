@@ -275,26 +275,26 @@ class FuzzyCognitiveMap:
                     result[concept_id] = self.decision_function(exec_values)
         return result
 
-    def get_final_state(self, node_type="end"):
+    def get_final_state(self, nodes_type="target"):
         """
         Get inference result values of node_type or all nodes
         Args:
-            node_type: Type of nodes inference result
-                "all": calc all nodes final state
-                "end": calc regression or decision nodes final state
+            nodes_type: Type of nodes inference result
+                "any": calc all nodes final state
+                "target": calc regression or decision nodes final state
 
         Returns: Dict in way: {"<node_id>": <final_value>}
 
         """
         result = {}
         for concept_id in self.execution.keys():
-            if node_type == "all":
+            if nodes_type == "any":
                 result[concept_id] = self.decision_function(self.execution[concept_id])
-            if node_type == "end":
+            if nodes_type == "target":
                 if (self.topology[concept_id][NODE_TYPE] == TYPE_DECISION
                         or self.topology[concept_id][NODE_TYPE] == TYPE_REGRESOR):
                     result[concept_id] = self.decision_function(self.execution[concept_id])
-            elif self.topology[concept_id][NODE_TYPE] == node_type:
+            elif self.topology[concept_id][NODE_TYPE] == nodes_type:
                 result[concept_id] = self.decision_function(self.execution[concept_id])
         return result
 
