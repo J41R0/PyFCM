@@ -255,7 +255,7 @@ class FuzzyCognitiveMap:
 
             self.iterations += 1
 
-    def search_result_by_id(self, concept_id):
+    def search_concept_final_state(self, concept_id):
         """
         Get inference result values by node id
         Args:
