@@ -275,7 +275,7 @@ class FuzzyCognitiveMap:
                     result[concept_id] = self.decision_function(exec_values)
         return result
 
-    def get_result_by_type(self, node_type="end"):
+    def get_final_state(self, node_type="end"):
         """
         Get inference result values of node_type or all nodes
         Args:
