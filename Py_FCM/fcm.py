@@ -149,20 +149,20 @@ class FuzzyCognitiveMap:
         # Map topology: {"<node_name>":{NODE_ACTIVE:<True/False>,NODE_ARCS:[("<node_name>",<ark_float_value>),...]
         #  ,NODE_AUX:<list>,NODE_VALUE:<v>,NODE_TYPE:<type of node>,NODE_USE_MEM:<True/False>,NODE_EXEC_FUNC:<callable>,
         # NODE_ACTV_FUNC:<callable>,NODE_ACTV_FUNC_ARGS:<kwargs>},NODE_TRAIN_ACTIVATION:<dict>}
-        self.topology = {}
+        self.__topology = {}
         # Relation list copy for less inference complexity
         self.__arc_list = []
         # Execution behavior: {"<node_name>":[<values_list>], ...}
-        self.execution = {}
+        self.__execution = {}
         # Stabilizing flag
         self.flag_stop_at_stabilize = stabilize
         # Maximum number of iterations
         self.max_iter = max_it
         # Extra steps after achieve stable state
         if extra_steps > 0:
-            self.extra_steps = extra_steps
+            self.__extra_steps = extra_steps
         else:
-            self.extra_steps = 1
+            self.__extra_steps = 1
         # Stability threshold
         self.stability_diff = stab_diff
         # Activation when concept is found, may be certainty
@@ -170,23 +170,23 @@ class FuzzyCognitiveMap:
         # TODO: parametrize function per output feature
         # Function to compute decision or regresor nodes, last
         if result == "last":
-            self.decision_function = self.__last
+            self.__decision_function = self.__last
         if result == "average":
-            self.decision_function = self.__average
+            self.__decision_function = self.__average
         if result == "exited":
-            self.decision_function = self.__exited
+            self.__decision_function = self.__exited
         # memory influence flag
         self.flag_mem_influence = mem_influence
         # Activation function definition
-        self.global_function = self.__get_actv_func_by_name(activ_function)
+        self.__global_function = self.__get_actv_func_by_name(activ_function)
 
         # Set global function arguments
         self.global_func_args = kwargs
         # map iterations
-        self.iterations = 1
+        self.__iterations = 1
 
         # str separator for datasets
-        self.separator = None
+        self.__separator = None
 
     def add_concept(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
                     exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
@@ -206,44 +206,44 @@ class FuzzyCognitiveMap:
         Returns: None
 
         """
-        self.topology[concept_name] = {NODE_ACTIVE: is_active, NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
-        self.topology[concept_name][NODE_EXEC_FUNC] = self.__get_exec_func_by_name(exitation_function)
-        self.topology[concept_name][NODE_TYPE] = node_type
+        self.__topology[concept_name] = {NODE_ACTIVE: is_active, NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
+        self.__topology[concept_name][NODE_EXEC_FUNC] = self.__get_exec_func_by_name(exitation_function)
+        self.__topology[concept_name][NODE_TYPE] = node_type
         # define result function
         # self.topology[concept][NODE_RES_FUNC] = result_function
 
         # scale and normalize the values for fuzzy function
         # activation_dict = {'membership':[],'val_list':[]}
         if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR:
-            self.topology[concept_name][NODE_EXEC_FUNC] = self.__get_exec_func_by_name('MEAN')
-            self.topology[concept_name][NODE_TRAIN_ACTIVATION] = activation_dict
+            self.__topology[concept_name][NODE_EXEC_FUNC] = self.__get_exec_func_by_name('MEAN')
+            self.__topology[concept_name][NODE_TRAIN_ACTIVATION] = activation_dict
             # scale for only positive values
-            self.topology[concept_name][NODE_TRAIN_MIN] = abs(min(activation_dict['val_list']))
+            self.__topology[concept_name][NODE_TRAIN_MIN] = abs(min(activation_dict['val_list']))
             for pos in range(len(activation_dict['val_list'])):
-                activation_dict['val_list'][pos] += self.topology[concept_name][NODE_TRAIN_MIN]
+                activation_dict['val_list'][pos] += self.__topology[concept_name][NODE_TRAIN_MIN]
             # normalize positive values
-            self.topology[concept_name][NODE_TRAIN_FMAX] = max(activation_dict['val_list'])
+            self.__topology[concept_name][NODE_TRAIN_FMAX] = max(activation_dict['val_list'])
             for pos in range(len(activation_dict['val_list'])):
-                activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.topology[concept_name][
+                activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.__topology[concept_name][
                     NODE_TRAIN_FMAX]
 
         if use_memory is not None:
-            self.topology[concept_name][NODE_USE_MEM] = use_memory
+            self.__topology[concept_name][NODE_USE_MEM] = use_memory
         else:
-            self.topology[concept_name][NODE_USE_MEM] = self.flag_mem_influence
+            self.__topology[concept_name][NODE_USE_MEM] = self.flag_mem_influence
 
         # define activation function
         if activation_dict is not None:
-            self.topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
-            self.topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
+            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
+            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
         elif activ_function is not None:
-            self.topology[concept_name][NODE_ACTV_FUNC] = self.__get_actv_func_by_name(activ_function)
-            self.topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
+            self.__topology[concept_name][NODE_ACTV_FUNC] = self.__get_actv_func_by_name(activ_function)
+            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
         else:
-            self.topology[concept_name][NODE_ACTV_FUNC] = self.global_function
-            self.topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.global_func_args
+            self.__topology[concept_name][NODE_ACTV_FUNC] = self.__global_function
+            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.global_func_args
 
-        self.execution[concept_name] = [0.0]
+        self.__execution[concept_name] = [0.0]
 
     def add_relation(self, origin_concept: str, destiny_concept: str, weight: float):
         """
@@ -256,8 +256,8 @@ class FuzzyCognitiveMap:
         Returns: None
 
         """
-        if destiny_concept in self.topology:
-            self.topology[origin_concept][NODE_ARCS].append((destiny_concept, weight))
+        if destiny_concept in self.__topology:
+            self.__topology[origin_concept][NODE_ARCS].append((destiny_concept, weight))
             self.__arc_list.append((destiny_concept, weight, origin_concept))
 
     def clear_all(self):
@@ -267,9 +267,9 @@ class FuzzyCognitiveMap:
 
         """
         self.reset_execution()
-        self.topology = {}
+        self.__topology = {}
         self.__arc_list = []
-        self.execution = {}
+        self.__execution = {}
 
     def init_concept(self, concept_name: str, value: float, required_presence=True, lazzy_init=False):
         """
@@ -282,15 +282,15 @@ class FuzzyCognitiveMap:
         Returns: None
 
         """
-        if concept_name not in self.topology:
+        if concept_name not in self.__topology:
             if required_presence:
                 raise Exception("Concept ")
             else:
                 return
         if lazzy_init:
-            self.topology[concept_name][NODE_AUX].append(value)
+            self.__topology[concept_name][NODE_AUX].append(value)
         else:
-            self.topology[concept_name][NODE_VALUE] = value
+            self.__topology[concept_name][NODE_VALUE] = value
 
     def is_stable(self):
         """
@@ -300,10 +300,10 @@ class FuzzyCognitiveMap:
         """
         # all(all nodes) or result(decision or target nodes)
         stable = True
-        if self.iterations > 1:
-            for node in self.execution.keys():
+        if self.__iterations > 1:
+            for node in self.__execution.keys():
                 # difference between last two states
-                if abs(self.execution[node][-1] - self.execution[node][-2]) > self.stability_diff:
+                if abs(self.__execution[node][-1] - self.__execution[node][-2]) > self.stability_diff:
                     stable = False
         else:
             return False
@@ -315,10 +315,10 @@ class FuzzyCognitiveMap:
         Returns: None
 
         """
-        for node, data in self.topology.items():
+        for node, data in self.__topology.items():
             data[NODE_AUX] = []
-            data[NODE_VALUE] = self.execution[node][0]
-            self.execution[node] = [data[NODE_VALUE]]
+            data[NODE_VALUE] = self.__execution[node][0]
+            self.__execution[node] = [data[NODE_VALUE]]
 
     def clear_execution(self):
         """
@@ -326,10 +326,10 @@ class FuzzyCognitiveMap:
         Returns: None
 
         """
-        for node, data in self.topology.items():
+        for node, data in self.__topology.items():
             data[NODE_AUX] = []
             data[NODE_VALUE] = 0
-            self.execution[node] = [0]
+            self.__execution[node] = [0]
 
     def run_inference(self, reset=True):
         """
@@ -339,8 +339,8 @@ class FuzzyCognitiveMap:
         """
         if reset:
             self.reset_execution()
-        self.iterations = 1
-        extra_steps = self.extra_steps
+        self.__iterations = 1
+        extra_steps = self.__extra_steps
         while extra_steps > 0:
             # execute extra_steps new iterations after finish execution
             if not self.__keep_execution():
@@ -350,20 +350,20 @@ class FuzzyCognitiveMap:
                 dest = arc[ARC_DESTINY]
                 weight = arc[ARC_WEIGHT]
                 # set value to: sum(wij * Ai)
-                if self.topology[origin][NODE_ACTIVE]:
-                    self.topology[dest][NODE_AUX].append(self.topology[origin][NODE_VALUE] * weight)
+                if self.__topology[origin][NODE_ACTIVE]:
+                    self.__topology[dest][NODE_AUX].append(self.__topology[origin][NODE_VALUE] * weight)
 
-            for node in self.execution.keys():
+            for node in self.__execution.keys():
                 # calc execution value using NODE_AUX, NODE_VALUE, NODE_USE_MEM and NODE_ACTIVE, the values may change
-                exec_val = self.topology[node][NODE_EXEC_FUNC](self.topology[node])
+                exec_val = self.__topology[node][NODE_EXEC_FUNC](self.__topology[node])
                 # reset NODE_AUX after calculate the execution value
-                self.topology[node][NODE_AUX].clear()  # = []
-                result = self.topology[node][NODE_ACTV_FUNC](exec_val, **self.topology[node][NODE_ACTV_FUNC_ARGS])
+                self.__topology[node][NODE_AUX].clear()  # = []
+                result = self.__topology[node][NODE_ACTV_FUNC](exec_val, **self.__topology[node][NODE_ACTV_FUNC_ARGS])
                 # update execution values
-                self.topology[node][NODE_VALUE] = result
-                self.execution[node].append(result)
+                self.__topology[node][NODE_VALUE] = result
+                self.__execution[node].append(result)
 
-            self.iterations += 1
+            self.__iterations += 1
 
     def search_concept_final_state(self, concept):
         """
@@ -376,13 +376,13 @@ class FuzzyCognitiveMap:
         """
         result = {}
         if type(concept) == list:
-            for concept, exec_values in self.execution.items():
+            for concept, exec_values in self.__execution.items():
                 if concept in concept:
-                    result[concept] = self.decision_function(exec_values)
+                    result[concept] = self.__decision_function(exec_values)
         else:
-            for concept, exec_values in self.execution.items():
+            for concept, exec_values in self.__execution.items():
                 if concept in concept:
-                    result[concept] = self.decision_function(exec_values)
+                    result[concept] = self.__decision_function(exec_values)
         return result
 
     def get_final_state(self, nodes_type="target"):
@@ -397,27 +397,27 @@ class FuzzyCognitiveMap:
 
         """
         result = {}
-        for concept_id in self.execution.keys():
+        for concept_id in self.__execution.keys():
             if nodes_type == "any":
-                result[concept_id] = self.decision_function(self.execution[concept_id])
+                result[concept_id] = self.__decision_function(self.__execution[concept_id])
             if nodes_type == "target":
-                if (self.topology[concept_id][NODE_TYPE] == TYPE_DECISION
-                        or self.topology[concept_id][NODE_TYPE] == TYPE_REGRESOR):
-                    result[concept_id] = self.decision_function(self.execution[concept_id])
-            elif self.topology[concept_id][NODE_TYPE] == nodes_type:
-                result[concept_id] = self.decision_function(self.execution[concept_id])
+                if (self.__topology[concept_id][NODE_TYPE] == TYPE_DECISION
+                        or self.__topology[concept_id][NODE_TYPE] == TYPE_REGRESOR):
+                    result[concept_id] = self.__decision_function(self.__execution[concept_id])
+            elif self.__topology[concept_id][NODE_TYPE] == nodes_type:
+                result[concept_id] = self.__decision_function(self.__execution[concept_id])
         return result
 
     def plot_execution(self, fig_name="map", limit=0, plot_all=False, path=""):
         colors = ['b', 'orange', 'g', 'r', 'c', 'm', 'y', 'k', 'Brown', 'ForestGreen']
-        for node in self.execution.keys():
-            end = len(self.execution[node])
+        for node in self.__execution.keys():
+            end = len(self.__execution[node])
             if end > limit > 0:
                 end = limit
             plot_val = []
             for it in range(0, end):
-                plot_val.append(self.execution[node][it])
-            if self.topology[node][NODE_TYPE] == TYPE_DECISION or self.topology[node][
+                plot_val.append(self.__execution[node][it])
+            if self.__topology[node][NODE_TYPE] == TYPE_DECISION or self.__topology[node][
                 NODE_TYPE] != TYPE_FUZZY or plot_all:
                 plt.plot(range(0, end), plot_val, colors[random.randint(a=0, b=9)])
                 # plt.axis([0, len(current.values) - 1, 0.0, 1.0])
@@ -428,9 +428,9 @@ class FuzzyCognitiveMap:
 
     def plot_topology(self, path='', fig_name="topology"):
         graph = nx.Graph()
-        graph.add_nodes_from(self.topology.keys())
-        for key in self.topology.keys():
-            for out_node in self.topology[key][NODE_ARCS]:
+        graph.add_nodes_from(self.__topology.keys())
+        for key in self.__topology.keys():
+            for out_node in self.__topology[key][NODE_ARCS]:
                 graph.add_edge(key, out_node[ARC_DESTINY])
         nx.draw(graph)
         plt.savefig(path + fig_name + ".png")
@@ -481,14 +481,14 @@ class FuzzyCognitiveMap:
         # group execution results by feature
         # exec_res = {'feature_name':[{'concept_name',[<exec_val_list>]}, ...]}
         exec_res = {}
-        for concept in self.execution.keys():
-            if self.topology[concept][NODE_TYPE] == TYPE_DECISION or self.topology[concept][NODE_TYPE] == TYPE_REGRESOR:
+        for concept in self.__execution.keys():
+            if self.__topology[concept][NODE_TYPE] == TYPE_DECISION or self.__topology[concept][NODE_TYPE] == TYPE_REGRESOR:
                 feat_name = str(concept).split(self.sep)[-1]
                 if feat_name in exec_res.keys():
-                    exec_res[feat_name].append({concept: self.execution[concept]})
+                    exec_res[feat_name].append({concept: self.__execution[concept]})
                 else:
                     exec_res[feat_name] = []
-                    exec_res[feat_name].append({concept: self.execution[concept]})
+                    exec_res[feat_name].append({concept: self.__execution[concept]})
 
         # estimate result for each concept set associated to target feature
         result = {}
@@ -499,15 +499,15 @@ class FuzzyCognitiveMap:
             some_concept_name = list(exec_res[feat][0].keys())[0]
 
             # Estimate discrete result
-            if self.topology[some_concept_name][NODE_TYPE] == TYPE_DECISION:
+            if self.__topology[some_concept_name][NODE_TYPE] == TYPE_DECISION:
                 # solving by concept
                 class_name = ""
                 for concept_data in exec_res[feat]:
                     concept_name = list(concept_data.keys())[0]
                     if self.is_stable():
-                        res = self.__last(self.execution[concept_name])
+                        res = self.__last(self.__execution[concept_name])
                     else:
-                        res = self.estimate_desc_func(self.execution[concept_name])
+                        res = self.estimate_desc_func(self.__execution[concept_name])
                     # select gratest result value
                     if value is None:
                         value = res
@@ -519,15 +519,15 @@ class FuzzyCognitiveMap:
                 value = class_name
 
             # Estimate continous result
-            if self.topology[some_concept_name][NODE_TYPE] == TYPE_REGRESOR:
+            if self.__topology[some_concept_name][NODE_TYPE] == TYPE_REGRESOR:
                 candidates = []
                 for concept_data in exec_res[feat]:
                     concept_name = list(concept_data.keys())[0]
-                    res = self.estimate_desc_func(self.execution[concept_name])
+                    res = self.estimate_desc_func(self.__execution[concept_name])
                     candidates.extend(Fuzzy.defuzzyfication(res,
-                                                            self.topology[concept_name][NODE_TRAIN_MIN],
-                                                            self.topology[concept_name][NODE_TRAIN_FMAX],
-                                                            **self.topology[concept_name][NODE_TRAIN_ACTIVATION]))
+                                                            self.__topology[concept_name][NODE_TRAIN_MIN],
+                                                            self.__topology[concept_name][NODE_TRAIN_FMAX],
+                                                            **self.__topology[concept_name][NODE_TRAIN_ACTIVATION]))
                 # search minimum size interval
                 candidates.sort()
                 if len(candidates) == 0:
@@ -578,7 +578,7 @@ class FuzzyCognitiveMap:
         Returns: True if needs other inference step, False otherwise
 
         """
-        if self.iterations >= self.max_iter:
+        if self.__iterations >= self.max_iter:
             return False
         if self.flag_stop_at_stabilize:
             return not self.is_stable()
@@ -620,10 +620,10 @@ class FuzzyCognitiveMap:
         Returns: Found concept type, None otherwise
 
         """
-        concepts_list = list(self.topology.keys())
+        concepts_list = list(self.__topology.keys())
         for concept in concepts_list:
             if name in concept:
-                return self.topology[concept][NODE_TYPE]
+                return self.__topology[concept][NODE_TYPE]
         return None
 
     def __get_related_concepts_names(self, name):
@@ -636,14 +636,14 @@ class FuzzyCognitiveMap:
 
         """
         result = []
-        concepts_list = list(self.topology.keys())
+        concepts_list = list(self.__topology.keys())
         for concept in concepts_list:
             if name in concept:
                 result.append(concept)
         return result
 
     def __est_concept_func_args(self, concept, x_val, y_val):
-        con_func = self.topology[concept][NODE_ACTV_FUNC]
+        con_func = self.__topology[concept][NODE_ACTV_FUNC]
         kwargs = {}
         if con_func == Activation.sigmoid:
             lambda_val = Activation.sigmoid_lambda(x_val, y_val)
@@ -652,7 +652,7 @@ class FuzzyCognitiveMap:
         if con_func == Activation.sigmoid_hip:
             lambda_val = Activation.sigmoid_hip_lambda(x_val, y_val)
             kwargs["lambda_val"] = lambda_val
-        self.topology[concept][NODE_ACTV_FUNC_ARGS] = kwargs
+        self.__topology[concept][NODE_ACTV_FUNC_ARGS] = kwargs
 
     def __init_from_ds(self, feature, value, separator='_'):
         """
@@ -664,16 +664,16 @@ class FuzzyCognitiveMap:
         Returns: None
 
         """
-        self.separator = separator
+        self.__separator = separator
         concept_type = self.__find_related_concept_type(feature)
         if concept_type:
             processed = False
             if concept_type != TYPE_REGRESOR and concept_type != TYPE_FUZZY and type(value) == str:
                 # init all discrete concepts value, estimating the concept name
-                disc_concept_name = str(value) + self.separator + feature
+                disc_concept_name = str(value) + self.__separator + feature
                 if self.__find_related_concept_type(disc_concept_name):
-                    self.topology[disc_concept_name][NODE_VALUE] = 1
-                    self.execution[disc_concept_name] = [1]
+                    self.__topology[disc_concept_name][NODE_VALUE] = 1
+                    self.__execution[disc_concept_name] = [1]
                     processed = True
                 else:
                     Warning("Concept '" + disc_concept_name + "' not defined in FCM topology.")
@@ -681,11 +681,11 @@ class FuzzyCognitiveMap:
                 related_concepts = self.__get_related_concepts_names(feature)
                 for concept in related_concepts:
                     activation_value = Fuzzy.fuzzyfication(value,
-                                                           self.topology[concept][NODE_TRAIN_MIN],
-                                                           self.topology[concept][NODE_TRAIN_FMAX],
-                                                           **self.topology[concept][NODE_TRAIN_ACTIVATION])
-                    self.topology[concept][NODE_VALUE] = activation_value
-                    self.execution[concept] = [activation_value]
+                                                           self.__topology[concept][NODE_TRAIN_MIN],
+                                                           self.__topology[concept][NODE_TRAIN_FMAX],
+                                                           **self.__topology[concept][NODE_TRAIN_ACTIVATION])
+                    self.__topology[concept][NODE_VALUE] = activation_value
+                    self.__execution[concept] = [activation_value]
                 processed = True
             if not processed:
                 raise Exception(
