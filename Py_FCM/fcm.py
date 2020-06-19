@@ -268,6 +268,10 @@ class FuzzyCognitiveMap:
             self.__topology[origin_concept][NODE_ARCS].append((destiny_concept, weight))
             self.__arc_list.append((destiny_concept, weight, origin_concept))
 
+    def get_concept_outgoing_relations(self, concept_name):
+        if concept_name in self.__topology:
+            return self.__topology[concept_name][NODE_ARCS].copy()
+
     def clear_all(self):
         """
         Reset whole data in map
@@ -292,7 +296,7 @@ class FuzzyCognitiveMap:
         """
         if concept_name not in self.__topology:
             if required_presence:
-                raise Exception("Concept ")
+                raise Exception("Missing concept " + concept_name)
             else:
                 return
         if lazzy_init:
