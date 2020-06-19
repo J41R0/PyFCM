@@ -1,5 +1,6 @@
 import json
 import random
+from collections import defaultdict
 
 import numpy as np
 import networkx as nx
@@ -118,6 +119,84 @@ def from_json(str_json: str):
         return my_fcm
     except Exception as err:
         raise Exception("Cannot load json data due: " + str(err))
+
+
+def join(map_set, node_strategy='union', value_strategy="average", relation_strategy="average"):
+    """
+    Join a set of FuzzyCognitiveMap in a new one according to defined strategy.All nodes will be set to default behavior
+    to avid mixing issues in the result. The final map also will be created with default behavior so, is required to
+    update the map behavior after join process. This default setting will be updated on future library versions.
+    Args:
+        map_set: An iterable object that contains the FCMs
+        node_strategy: Strategy to join all maps nodes
+            union: the new FuzzyCognitiveMap will have the set union of nodes in map_set
+            intersection: the new FuzzyCognitiveMap will have the set intersection of nodes in  map_set
+        value_strategy: Strategy to define the initial state of map nodes
+            highest: Select the highest node value as initial node state
+            lowest: Select the lowest node value as initial node state
+            average: Select the average of node values as initial node state
+            weighted_average: Select the weighted_average of node values based on FCMs weight as initial node state
+        relation_strategy: Strategy to define the value for repeated relations weight in map topology
+            highest: Select the highest relation value as new relation value
+            lowest: Select the lowest relation value as new relation value
+            average: Select the average of relations values as new relation value
+
+    Returns: A new FuzzyCognitiveMap generated using defined strategies
+
+    """
+    result_fcm = FuzzyCognitiveMap()
+    is_first = True
+    nodes_set = set()
+    for fcm in map_set:
+        if is_first:
+            is_first = False
+            nodes = fcm.search_concept_final_state()
+            nodes_set = set(nodes.keys())
+        if node_strategy == 'union':
+            nodes = fcm.search_concept_final_state()
+            nodes_set = nodes_set.union(nodes.keys())
+
+        if node_strategy == 'intersection':
+            nodes = fcm.search_concept_final_state()
+            nodes_set = nodes_set.intersection(nodes.keys())
+
+    for node in nodes_set:
+        result_fcm.add_concept(node)
+        node_values = []
+        fcm_weights = []
+        node_relations = []
+        node_grouped_relations = defaultdict(list)
+        for fcm in map_set:
+            node_values.append(fcm.get_concept_value())
+            fcm_weights.append(fcm.weight)
+            node_relations.extend(fcm.get_concept_outgoing_relations(node))
+
+        for other_node, weight in node_relations:
+            if other_node in nodes_set:
+                node_grouped_relations[other_node].append(weight)
+
+        num_elements = len(node_values)
+        if value_strategy == "highest":
+            result_fcm.init_concept(node, max(node_values))
+        if value_strategy == "lowest":
+            result_fcm.init_concept(node, min(node_values))
+        if value_strategy == "average":
+            result_fcm.init_concept(node, sum(node_values) / num_elements)
+        if value_strategy == "weighted_average":
+            node_values = np.array(node_values)
+            fcm_weights = np.array(fcm_weights)
+            result_fcm.init_concept(node, int(node_values.dot(fcm_weights)) / num_elements)
+
+        if relation_strategy == "highest":
+            for other_node in node_grouped_relations:
+                result_fcm.add_relation(node, other_node, max(node_grouped_relations[other_node]))
+        if relation_strategy == "lowest":
+            for other_node in node_grouped_relations:
+                result_fcm.add_relation(node, other_node, min(node_grouped_relations[other_node]))
+        if relation_strategy == "average":
+            for other_node in node_grouped_relations:
+                result_fcm.add_relation(node, other_node, sum(node_grouped_relations[other_node]) / len(
+                    node_grouped_relations[other_node]))
 
 
 class FuzzyCognitiveMap:
@@ -271,6 +350,7 @@ class FuzzyCognitiveMap:
     def get_concept_outgoing_relations(self, concept_name):
         if concept_name in self.__topology:
             return self.__topology[concept_name][NODE_ARCS].copy()
+        return []
 
     def clear_all(self):
         """
