@@ -249,6 +249,10 @@ class FuzzyCognitiveMap:
 
         self.__execution[concept_name] = [0.0]
 
+    def get_concept_value(self, concept_name: str):
+        if concept_name in self.__topology:
+            return self.__topology[concept_name][NODE_VALUE]
+
     def add_relation(self, origin_concept: str, destiny_concept: str, weight: float):
         """
         Add relation between existent pair of nodes
