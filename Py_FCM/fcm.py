@@ -1,6 +1,7 @@
 import json
 import random
 
+import numpy as np
 import networkx as nx
 from pandas import DataFrame
 import matplotlib.pyplot as plt
@@ -188,6 +189,9 @@ class FuzzyCognitiveMap:
         # str separator for datasets
         self.__separator = None
 
+        # map weight for join process
+        self.weight = 1
+
     def add_concept(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
                     exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
         """
@@ -365,7 +369,7 @@ class FuzzyCognitiveMap:
 
             self.__iterations += 1
 
-    def search_concept_final_state(self, concept):
+    def search_concept_final_state(self, concept=None):
         """
         Get inference result values by node id
         Args:
@@ -379,6 +383,9 @@ class FuzzyCognitiveMap:
             for concept, exec_values in self.__execution.items():
                 if concept in concept:
                     result[concept] = self.__decision_function(exec_values)
+        elif concept in None:
+            for concept, exec_values in self.__execution.items():
+                result[concept] = self.__decision_function(exec_values)
         else:
             for concept, exec_values in self.__execution.items():
                 if concept in concept:
@@ -482,7 +489,8 @@ class FuzzyCognitiveMap:
         # exec_res = {'feature_name':[{'concept_name',[<exec_val_list>]}, ...]}
         exec_res = {}
         for concept in self.__execution.keys():
-            if self.__topology[concept][NODE_TYPE] == TYPE_DECISION or self.__topology[concept][NODE_TYPE] == TYPE_REGRESOR:
+            if self.__topology[concept][NODE_TYPE] == TYPE_DECISION or self.__topology[concept][
+                NODE_TYPE] == TYPE_REGRESOR:
                 feat_name = str(concept).split(self.sep)[-1]
                 if feat_name in exec_res.keys():
                     exec_res[feat_name].append({concept: self.__execution[concept]})
