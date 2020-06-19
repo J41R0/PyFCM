@@ -121,7 +121,7 @@ def from_json(str_json: str):
         raise Exception("Cannot load json data due: " + str(err))
 
 
-def join(map_set, node_strategy='union', value_strategy="average", relation_strategy="average"):
+def join_maps(map_set, node_strategy='union', value_strategy="average", relation_strategy="average"):
     """
     Join a set of FuzzyCognitiveMap in a new one according to defined strategy.All nodes will be set to default behavior
     to avid mixing issues in the result. The final map also will be created with default behavior so, is required to
