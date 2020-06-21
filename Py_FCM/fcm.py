@@ -167,13 +167,17 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
         node_relations = []
         node_grouped_relations = defaultdict(list)
         for fcm in map_set:
-            node_values.append(fcm.get_concept_value())
+            curr_val = fcm.get_concept_value(node)
+            if curr_val is not None:
+                node_values.append(fcm.get_concept_value(node))
             fcm_weights.append(fcm.weight)
             node_relations.extend(fcm.get_concept_outgoing_relations(node))
 
         for other_node, weight in node_relations:
             if other_node in nodes_set:
                 node_grouped_relations[other_node].append(weight)
+
+        # print(node, node_relations, node_grouped_relations)
 
         num_elements = len(node_values)
         if value_strategy == "highest":
@@ -197,6 +201,7 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
             for other_node in node_grouped_relations:
                 result_fcm.add_relation(node, other_node, sum(node_grouped_relations[other_node]) / len(
                     node_grouped_relations[other_node]))
+    return result_fcm
 
 
 class FuzzyCognitiveMap:
@@ -480,7 +485,7 @@ class FuzzyCognitiveMap:
             for concept, exec_values in self.__execution.items():
                 if concept in concept:
                     result[concept] = self.__decision_function(exec_values)
-        elif concept in None:
+        elif concept is None:
             for concept, exec_values in self.__execution.items():
                 result[concept] = self.__decision_function(exec_values)
         else:
@@ -549,7 +554,7 @@ class FuzzyCognitiveMap:
         result = ""
         for relation in self.__arc_list:
             result += relation[ARC_ORIGIN] + " -> (" + str(relation[ARC_WEIGHT]) + ") -> " + relation[
-                ARC_DESTINY] + ""
+                ARC_DESTINY] + "\n"
         return result
 
     # decision functions
