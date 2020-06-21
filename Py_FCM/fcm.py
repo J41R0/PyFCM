@@ -83,7 +83,7 @@ def from_json(str_json: str):
         if 'actv_func_params' in data_dict:
             actv_param = data_dict['actv_func_params']
         my_fcm = FuzzyCognitiveMap(max_it=data_dict['iter'],
-                                   result=data_dict['result'],
+                                   decision_function=data_dict['result'],
                                    mem_influence=data_dict['memory_influence'],
                                    activ_function=data_dict['activation_function'],
                                    **actv_param)
@@ -201,7 +201,7 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
 
 class FuzzyCognitiveMap:
 
-    def __init__(self, max_it=200, extra_steps=5, stabilize=True, stab_diff=0.001, result="average",
+    def __init__(self, max_it=200, extra_steps=5, stabilize=True, stab_diff=0.001, decision_function="average",
                  mem_influence=False, activ_function="sigmoid_hip", **kwargs):
         """
         Fuzzy Cognitive Map Class, may be used like estimator.
@@ -210,7 +210,7 @@ class FuzzyCognitiveMap:
             extra_steps: Extra inference steps after end iterations
             stabilize: Exec map until stabilize
             stab_diff: Stability threshold value
-            result: Method for select winner decision node by its values during execution.
+            decision_function: Method for select winner decision node by its values during execution.
                 last: Last inference node value
                 average: Highest average of all execution values in decision nodes
                 exited: Highest last execution value in decision nodes
@@ -249,16 +249,13 @@ class FuzzyCognitiveMap:
         # self.init_activation = init_activ
         # TODO: parametrize function per output feature
         # Function to compute decision or regresor nodes, last
-        if result == "last":
-            self.__decision_function = self.__last
-        if result == "average":
-            self.__decision_function = self.__average
-        if result == "exited":
-            self.__decision_function = self.__exited
+        self.__decision_function = None
+        self.set_map_decision_function(decision_function)
         # memory influence flag
         self.flag_mem_influence = mem_influence
         # Activation function definition
-        self.__global_function = self.__get_actv_func_by_name(activ_function)
+        self.__map_activation_function = None
+        self.set_map_activation_function(activ_function)
 
         # Set global function arguments
         self.global_func_args = kwargs
@@ -270,6 +267,18 @@ class FuzzyCognitiveMap:
 
         # map weight for join process
         self.weight = 1
+
+    def set_map_decision_function(self, function_name):
+        if function_name == "last":
+            self.__decision_function = self.__last
+        if function_name == "average":
+            self.__decision_function = self.__average
+        if function_name == "exited":
+            self.__decision_function = self.__exited
+
+    def set_map_activation_function(self, func_name):
+        # Activation function definition
+        self.__map_activation_function = self.__get_actv_func_by_name(func_name)
 
     def add_concept(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
                     exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
@@ -323,7 +332,7 @@ class FuzzyCognitiveMap:
             self.__topology[concept_name][NODE_ACTV_FUNC] = self.__get_actv_func_by_name(activ_function)
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
         else:
-            self.__topology[concept_name][NODE_ACTV_FUNC] = self.__global_function
+            self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.global_func_args
 
         self.__execution[concept_name] = [0.0]
@@ -577,9 +586,9 @@ class FuzzyCognitiveMap:
         # exec_res = {'feature_name':[{'concept_name',[<exec_val_list>]}, ...]}
         exec_res = {}
         for concept in self.__execution.keys():
-            if self.__topology[concept][NODE_TYPE] == TYPE_DECISION or self.__topology[concept][
-                NODE_TYPE] == TYPE_REGRESOR:
-                feat_name = str(concept).split(self.sep)[-1]
+            if (self.__topology[concept][NODE_TYPE] == TYPE_DECISION or
+                    self.__topology[concept][NODE_TYPE] == TYPE_REGRESOR):
+                feat_name = str(concept).split(self.__separator)[-1]
                 if feat_name in exec_res.keys():
                     exec_res[feat_name].append({concept: self.__execution[concept]})
                 else:
