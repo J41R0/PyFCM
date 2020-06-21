@@ -202,7 +202,7 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
 class FuzzyCognitiveMap:
 
     def __init__(self, max_it=200, extra_steps=5, stabilize=True, stab_diff=0.001, result="average",
-                 mem_influence=True, activ_function="sigmoid", **kwargs):
+                 mem_influence=False, activ_function="sigmoid_hip", **kwargs):
         """
         Fuzzy Cognitive Map Class, may be used like estimator.
         Args:
