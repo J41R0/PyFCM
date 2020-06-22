@@ -177,8 +177,6 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
             if other_node in nodes_set:
                 node_grouped_relations[other_node].append(weight)
 
-        # print(node, node_relations, node_grouped_relations)
-
         num_elements = len(node_values)
         if value_strategy == "highest":
             result_fcm.init_concept(node, max(node_values))
@@ -611,11 +609,7 @@ class FuzzyCognitiveMap:
 
     def __exited(self, val_list):
         # return highest execution value
-        result = -10
-        for elem in val_list:
-            if result < elem:
-                result = elem
-        return result
+        return max(val_list)
 
     # private functions
     def __fit(self, x, y):
