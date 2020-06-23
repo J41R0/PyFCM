@@ -415,7 +415,7 @@ class FuzzyCognitiveMap:
         self.__arc_list = []
         self.__execution = {}
 
-    def init_concept(self, concept_name: str, value: float, required_presence=True, lazzy_init=False):
+    def init_concept(self, concept_name: str, value: float, required_presence=True):
         """
 
         Set concept initial value, by default 1
@@ -431,10 +431,8 @@ class FuzzyCognitiveMap:
                 raise Exception("Missing concept " + concept_name)
             else:
                 return
-        if lazzy_init:
-            self.__topology[concept_name][NODE_AUX].append(value)
-        else:
-            self.__topology[concept_name][NODE_VALUE] = value
+        self.__topology[concept_name][NODE_VALUE] = value
+        self.__execution[concept_name] = [value]
 
     def is_stable(self):
         """
