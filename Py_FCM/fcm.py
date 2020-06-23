@@ -121,7 +121,8 @@ def from_json(str_json: str):
         raise Exception("Cannot load json data due: " + str(err))
 
 
-def join_maps(map_set, node_strategy='union', value_strategy="average", relation_strategy="average"):
+def join_maps(map_set, node_strategy='union', value_strategy="average", relation_strategy="average",
+              ignore_zeros=False):
     """
     Join a set of FuzzyCognitiveMap in a new one according to defined strategy.All nodes will be set to default behavior
     to avid mixing issues in the result. The final map also will be created with default behavior so, is required to
@@ -140,6 +141,7 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
             highest: Select the highest relation value as new relation value
             lowest: Select the lowest relation value as new relation value
             average: Select the average of relations values as new relation value
+        ignore_zeros: Ignore zero evaluated concepts in value_strategy selected
 
     Returns: A new FuzzyCognitiveMap generated using defined strategies
 
@@ -169,7 +171,12 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
         for fcm in map_set:
             curr_val = fcm.get_concept_value(node)
             if curr_val is not None:
-                node_values.append(fcm.get_concept_value(node))
+                if ignore_zeros:
+                    if curr_val != 0:
+                        node_values.append(curr_val)
+                else:
+                    node_values.append(curr_val)
+
             fcm_weights.append(fcm.weight)
             node_relations.extend(fcm.get_concept_outgoing_relations(node))
 
@@ -183,11 +190,13 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
         if value_strategy == "lowest":
             result_fcm.init_concept(node, min(node_values))
         if value_strategy == "average":
-            result_fcm.init_concept(node, sum(node_values) / num_elements)
+            if num_elements > 0:
+                result_fcm.init_concept(node, sum(node_values) / num_elements)
         if value_strategy == "weighted_average":
-            node_values = np.array(node_values)
-            fcm_weights = np.array(fcm_weights)
-            result_fcm.init_concept(node, int(node_values.dot(fcm_weights)) / num_elements)
+            if num_elements > 0:
+                node_values = np.array(node_values)
+                fcm_weights = np.array(fcm_weights)
+                result_fcm.init_concept(node, int(node_values.dot(fcm_weights)) / num_elements)
 
         if relation_strategy == "highest":
             for other_node in node_grouped_relations:
@@ -197,8 +206,9 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
                 result_fcm.add_relation(node, other_node, min(node_grouped_relations[other_node]))
         if relation_strategy == "average":
             for other_node in node_grouped_relations:
-                result_fcm.add_relation(node, other_node, sum(node_grouped_relations[other_node]) / len(
-                    node_grouped_relations[other_node]))
+                if len(node_grouped_relations[other_node]) > 0:
+                    result_fcm.add_relation(node, other_node, sum(node_grouped_relations[other_node]) / len(
+                        node_grouped_relations[other_node]))
     return result_fcm
 
 
@@ -506,6 +516,9 @@ class FuzzyCognitiveMap:
                 self.__execution[node].append(result)
 
             self.__iterations += 1
+
+        for node in self.__topology:
+            self.__topology[node][NODE_VALUE] = self.__decision_function(self.__execution[node])
 
     def search_concept_final_state(self, concept=None):
         """
