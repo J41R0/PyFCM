@@ -4,7 +4,7 @@ Fuzzy cognitive maps python library
 ###Example usage
 
 ```
-from Py_FCM import FuzzyCognitiveMap
+from Py_FCM import from_json
 
 fcm_json = """{
          "iter": 500,
@@ -27,8 +27,8 @@ fcm_json = """{
           ]
         }
         """
-my_fcm = FuzzyCognitiveMap.from_json(fcm_json)
-my_fcm.run()
-result = my_fcm.get_result_by_type(node_type='all')
+my_fcm = from_json(fcm_json)
+my_fcm.run_inference()
+result = my_fcm.get_result_by_type(node_type='any')
 print(result)
 ```
