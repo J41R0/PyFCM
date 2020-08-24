@@ -3,7 +3,7 @@ from math import exp
 from Py_FCM.__const import *
 
 
-class Exitation:
+class Excitation:
     """
     All exitation functions must get a node as parameter
     """

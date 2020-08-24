@@ -7,7 +7,7 @@ import networkx as nx
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 
-from Py_FCM.functions import Activation, Fuzzy, Exitation
+from Py_FCM.functions import Activation, Fuzzy, Excitation
 from Py_FCM.__const import *
 
 
@@ -760,11 +760,11 @@ class FuzzyCognitiveMap:
 
     def __get_exec_func_by_name(self, func_name):
         if func_name == "KOSKO":
-            return Exitation.kosko
+            return Excitation.kosko
         if func_name == "PAPAGEORGIUS":
-            return Exitation.papageorgius
+            return Excitation.papageorgius
         if func_name == "MEAN":
-            return Exitation.mean
+            return Excitation.mean
 
     def __find_related_concept_type(self, name):
         """
