@@ -242,6 +242,58 @@ class Activation:
         names.add("proportion")
         return names
 
+
+class Decision:
+    @staticmethod
+    def last(val_list: list) -> float:
+        # return last value
+        return val_list[-1]
+
+    @staticmethod
+    def mean(val_list: list) -> float:
+        # return average execution value
+        result = 0
+        for elem in val_list:
+            result += elem
+        return result / len(val_list)
+
+    @staticmethod
+    def exited(val_list: list) -> float:
+        # return highest execution value
+        return max(val_list)
+
+    @staticmethod
+    def get_by_name(func_name: str):
+        """
+        Get the function callable object from the function name
+        Args:
+            func_name: Decision function name
+
+        Returns: Function callable object if func_name is found, None otherwise
+
+        """
+        if func_name == "LAST":
+            return Decision.last
+        if func_name == "MEAN":
+            return Decision.mean
+        if func_name == "EXITED":
+            return Decision.exited
+        return None
+
+    @staticmethod
+    def get_function_names() -> set:
+        """
+        Get available excitation function names
+        Returns: Set of names
+
+        """
+        names = set()
+        names.add("LAST")
+        names.add("MEAN")
+        names.add("EXITED")
+        return names
+
+
 class Fuzzy:
     @staticmethod
     def defuzzyfication(memb_val, min_scale, norm_val, membership=[], val_list=[]):
