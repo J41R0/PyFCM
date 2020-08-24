@@ -183,6 +183,34 @@ class Activation:
             estimation = -1
         return estimation
 
+    @staticmethod
+    def get_by_name(func_name: str):
+        """
+        Get the function callable object from the function name
+        Args:
+            func_name: Activation function name
+
+        Returns: Function callable object if func_name is found, None otherwise
+
+        """
+        if func_name == "biestate":
+            return Activation.bistate
+        if func_name == "threestate":
+            return Activation.tristate
+        if func_name == "saturation":
+            return Activation.saturation
+        if func_name == "tan_hip":
+            return Activation.sigmoid_hip
+        if func_name == "sigmoid":
+            return Activation.sigmoid
+        if func_name == "sigmoid_hip":
+            return Activation.sigmoid_hip
+        if func_name == "sum_w":
+            return Activation.sum_w
+        if func_name == "proportion":
+            return Activation.proportion
+        return None
+
 
 class Fuzzy:
     @staticmethod
