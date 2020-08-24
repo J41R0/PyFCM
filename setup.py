@@ -13,7 +13,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/J41R0/PyFCM",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude="tests"),
     install_requires=[
         'pandas >= 0.24.2',
         'matplotlib >= 3.1.0',
