@@ -50,7 +50,7 @@ class Excitation:
         """
         Get the function callable object from the function name
         Args:
-            func_name: Excitation function
+            func_name: Excitation function name
 
         Returns: Function callable object if func_name is found, None otherwise
 
@@ -62,6 +62,19 @@ class Excitation:
         if func_name == "MEAN":
             return Excitation.mean
         return None
+
+    @staticmethod
+    def get_function_names() -> set:
+        """
+        Get available excitation function names
+        Returns: Set of names
+
+        """
+        names = set()
+        names.add("KOSKO")
+        names.add("PAPAGEORGIUS")
+        names.add("MEAN")
+        return names
 
 
 class Activation:
