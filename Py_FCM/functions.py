@@ -224,6 +224,23 @@ class Activation:
             return Activation.proportion
         return None
 
+    @staticmethod
+    def get_function_names() -> set:
+        """
+        Get available activation function names
+        Returns: Set of names
+
+        """
+        names = set()
+        names.add("biestate")
+        names.add("threestate")
+        names.add("saturation")
+        names.add("tan_hip")
+        names.add("sigmoid")
+        names.add("sigmoid_hip")
+        names.add("sum_w")
+        names.add("proportion")
+        return names
 
 class Fuzzy:
     @staticmethod
