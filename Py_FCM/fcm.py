@@ -312,7 +312,7 @@ class FuzzyCognitiveMap:
 
         """
         self.__topology[concept_name] = {NODE_ACTIVE: is_active, NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
-        self.__topology[concept_name][NODE_EXEC_FUNC] = self.__get_exec_func_by_name(exitation_function)
+        self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name(exitation_function)
         self.__topology[concept_name][NODE_TYPE] = node_type
         # define result function
         # self.topology[concept][NODE_RES_FUNC] = result_function
@@ -320,7 +320,7 @@ class FuzzyCognitiveMap:
         # scale and normalize the values for fuzzy function
         # activation_dict = {'membership':[],'val_list':[]}
         if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR:
-            self.__topology[concept_name][NODE_EXEC_FUNC] = self.__get_exec_func_by_name('MEAN')
+            self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
             self.__topology[concept_name][NODE_TRAIN_ACTIVATION] = activation_dict
             # scale for only positive values
             self.__topology[concept_name][NODE_TRAIN_MIN] = abs(min(activation_dict['val_list']))
@@ -354,13 +354,13 @@ class FuzzyCognitiveMap:
                                exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
         if concept_name in self.__topology:
             self.__topology[concept_name][NODE_ACTIVE] = is_active
-            self.__topology[concept_name][NODE_EXEC_FUNC] = self.__get_exec_func_by_name(exitation_function)
+            self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name(exitation_function)
             self.__topology[concept_name][NODE_TYPE] = node_type
 
             # scale and normalize the values for fuzzy function
             # activation_dict = {'membership':[],'val_list':[]}
             if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR:
-                self.__topology[concept_name][NODE_EXEC_FUNC] = self.__get_exec_func_by_name('MEAN')
+                self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
                 self.__topology[concept_name][NODE_TRAIN_ACTIVATION] = activation_dict
                 # scale for only positive values
                 self.__topology[concept_name][NODE_TRAIN_MIN] = abs(min(activation_dict['val_list']))
@@ -738,14 +738,6 @@ class FuzzyCognitiveMap:
         if self.flag_stop_at_stabilize:
             return not self.is_stable()
         return True
-
-    def __get_exec_func_by_name(self, func_name):
-        if func_name == "KOSKO":
-            return Excitation.kosko
-        if func_name == "PAPAGEORGIUS":
-            return Excitation.papageorgius
-        if func_name == "MEAN":
-            return Excitation.mean
 
     def __find_related_concept_type(self, name):
         """
