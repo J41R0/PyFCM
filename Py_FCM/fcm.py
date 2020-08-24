@@ -7,7 +7,7 @@ import networkx as nx
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 
-from Py_FCM.functions import Activation, Fuzzy, Excitation
+from Py_FCM.functions import Activation, Excitation, Decision, Fuzzy
 from Py_FCM.__const import *
 
 
@@ -281,13 +281,8 @@ class FuzzyCognitiveMap:
         # map weight for join process
         self.weight = 1
 
-    def set_map_decision_function(self, function_name):
-        if function_name == "last":
-            self.__decision_function = self.__last
-        if function_name == "average":
-            self.__decision_function = self.__average
-        if function_name == "exited":
-            self.__decision_function = self.__exited
+    def set_map_decision_function(self, function_name: str):
+        self.__decision_function = Decision.get_by_name(function_name)
 
     def set_map_activation_function(self, func_name):
         # Activation function definition
@@ -605,22 +600,6 @@ class FuzzyCognitiveMap:
             result += relation[ARC_ORIGIN] + " -> (" + str(relation[ARC_WEIGHT]) + ") -> " + relation[
                 ARC_DESTINY] + "\n"
         return result
-
-    # decision functions
-    def __last(self, val_list):
-        # return last value
-        return val_list[-1]
-
-    def __average(self, val_list):
-        # return average execution value
-        result = 0
-        for elem in val_list:
-            result += elem
-        return result / len(val_list)
-
-    def __exited(self, val_list):
-        # return highest execution value
-        return max(val_list)
 
     # private functions
     def __fit(self, x, y):
