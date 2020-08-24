@@ -45,6 +45,24 @@ class Excitation:
             return 0
         return res / total
 
+    @staticmethod
+    def get_by_name(func_name: str):
+        """
+        Get the function callable object from the function name
+        Args:
+            func_name: Excitation function
+
+        Returns: Function callable object if func_name is found, None otherwise
+
+        """
+        if func_name == "KOSKO":
+            return Excitation.kosko
+        if func_name == "PAPAGEORGIUS":
+            return Excitation.papageorgius
+        if func_name == "MEAN":
+            return Excitation.mean
+        return None
+
 
 class Activation:
     @staticmethod
