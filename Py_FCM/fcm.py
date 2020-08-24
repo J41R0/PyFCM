@@ -291,7 +291,7 @@ class FuzzyCognitiveMap:
 
     def set_map_activation_function(self, func_name):
         # Activation function definition
-        self.__map_activation_function = self.__get_actv_func_by_name(func_name)
+        self.__map_activation_function = Activation.get_by_name(func_name)
 
     def add_concept(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
                     exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
@@ -342,7 +342,7 @@ class FuzzyCognitiveMap:
             self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
         elif activ_function is not None:
-            self.__topology[concept_name][NODE_ACTV_FUNC] = self.__get_actv_func_by_name(activ_function)
+            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_by_name(activ_function)
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
         else:
             self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
@@ -382,7 +382,7 @@ class FuzzyCognitiveMap:
                 self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
             elif activ_function is not None:
-                self.__topology[concept_name][NODE_ACTV_FUNC] = self.__get_actv_func_by_name(activ_function)
+                self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_by_name(activ_function)
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
             else:
                 self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
@@ -738,25 +738,6 @@ class FuzzyCognitiveMap:
         if self.flag_stop_at_stabilize:
             return not self.is_stable()
         return True
-
-    def __get_actv_func_by_name(self, func_name):
-        # Activation function definition
-        if func_name == "biestate":
-            return Activation.bistate
-        if func_name == "threestate":
-            return Activation.tristate
-        if func_name == "saturation":
-            return Activation.saturation
-        if func_name == "tan_hip":
-            return Activation.sigmoid_hip
-        if func_name == "sigmoid":
-            return Activation.sigmoid
-        if func_name == "sigmoid_hip":
-            return Activation.sigmoid_hip
-        if func_name == "sum_w":
-            return Activation.sum_w
-        if func_name == "proportion":
-            return Activation.proportion
 
     def __get_exec_func_by_name(self, func_name):
         if func_name == "KOSKO":
