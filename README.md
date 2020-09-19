@@ -1,10 +1,10 @@
-# Py_FCM
+# Py-FCM
 Fuzzy cognitive maps python library
 
 ###Example usage
 
 ```
-from Py_FCM import from_json
+from py_fcm import from_json
 
 fcm_json = """{
          "iter": 500,

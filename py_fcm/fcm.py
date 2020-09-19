@@ -7,8 +7,8 @@ import networkx as nx
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 
-from Py_FCM.functions import Activation, Excitation, Decision, Fuzzy
-from Py_FCM.__const import *
+from py_fcm.functions import Activation, Excitation, Decision, Fuzzy
+from py_fcm.__const import *
 
 
 def from_json(str_json: str):

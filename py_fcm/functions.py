@@ -1,6 +1,6 @@
 import math
 from math import exp
-from Py_FCM.__const import *
+from py_fcm.__const import *
 
 
 class Excitation:

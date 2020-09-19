@@ -1,5 +1,5 @@
 import unittest
-from Py_FCM.functions import Excitation
+from py_fcm.functions import Excitation
 
 
 class ExitationFunctionsTests(unittest.TestCase):
