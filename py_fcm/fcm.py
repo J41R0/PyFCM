@@ -214,7 +214,7 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
 
 class FuzzyCognitiveMap:
 
-    def __init__(self, max_it=200, extra_steps=5, stabilize=True, stab_diff=0.001, decision_function="average",
+    def __init__(self, max_it=200, extra_steps=5, stabilize=True, stab_diff=0.001, decision_function="MEAN",
                  mem_influence=False, activ_function="sigmoid_hip", **kwargs):
         """
         Fuzzy Cognitive Map Class, may be used like estimator.
@@ -224,9 +224,9 @@ class FuzzyCognitiveMap:
             stabilize: Exec map until stabilize
             stab_diff: Stability threshold value
             decision_function: Method for select winner decision node by its values during execution.
-                last: Last inference node value
-                average: Highest average of all execution values in decision nodes
-                exited: Highest last execution value in decision nodes
+                LAST: Last inference node value
+                MEAN: Highest average of all execution values in decision nodes
+                EXITED: Highest last execution value in decision nodes
                 stable: ...
             activ_function: Activation function for map nodes
                 biestate: Dual estate function => {0,1}
