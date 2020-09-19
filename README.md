@@ -1,4 +1,4 @@
-# Py-FCM
+# py-fcm
 Fuzzy cognitive maps python library
 
 ###Example usage
