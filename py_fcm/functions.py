@@ -144,6 +144,7 @@ class Activation:
 
     @staticmethod
     def fuzzy_set(value, membership=[], val_list=[]):
+        sign = 1.0
         if value != 0:
             sign = value / abs(value)
         value = abs(value)
