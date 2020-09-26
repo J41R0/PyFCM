@@ -287,6 +287,7 @@ class FuzzyCognitiveMap:
         self.weight = 1
 
     def set_map_decision_function(self, function_name: str):
+        # Decision function definition
         new_function = Decision.get_by_name(function_name)
         if new_function is None:
             raise Exception("Unknown decision function '" + function_name + "'")
@@ -295,7 +296,11 @@ class FuzzyCognitiveMap:
 
     def set_map_activation_function(self, function_name: str):
         # Activation function definition
-        self.__map_activation_function = Activation.get_by_name(function_name)
+        new_function = Activation.get_by_name(function_name)
+        if new_function is None:
+            raise Exception("Unknown activation function '" + function_name + "'")
+        self.activation_function = function_name
+        self.__map_activation_function = new_function
 
     def add_concept(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
                     exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
