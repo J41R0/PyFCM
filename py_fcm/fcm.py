@@ -104,8 +104,11 @@ def from_json(str_json: str):
             custom_func_args = {}
             if 'custom_func_args' in concept:
                 custom_func_args = concept['custom_func_args']
+            concept_type = TYPE_SIMPLE
+            if concept['type'] == 'DECISION':
+                concept_type = TYPE_DECISION
             my_fcm.add_concept(concept['id'],
-                               node_type=concept['type'],
+                               node_type=concept_type,
                                is_active=active,
                                use_memory=use_mem,
                                exitation_function=exitation,
@@ -262,16 +265,18 @@ class FuzzyCognitiveMap:
         # self.init_activation = init_activ
         # TODO: parametrize function per output feature
         # Function to compute decision or regresor nodes, last
-        self.__decision_function = None
+        self.__map_decision_function = None
+        self.decision_function = ''
         self.set_map_decision_function(decision_function)
         # memory influence flag
         self.flag_mem_influence = mem_influence
         # Activation function definition
         self.__map_activation_function = None
+        self.activation_function = activ_function
         self.set_map_activation_function(activ_function)
 
         # Set global function arguments
-        self.global_func_args = kwargs
+        self.__global_func_args = kwargs
         # map iterations
         self.__iterations = 1
 
@@ -282,11 +287,11 @@ class FuzzyCognitiveMap:
         self.weight = 1
 
     def set_map_decision_function(self, function_name: str):
-        self.__decision_function = Decision.get_by_name(function_name)
+        self.__map_decision_function = Decision.get_by_name(function_name)
 
-    def set_map_activation_function(self, func_name):
+    def set_map_activation_function(self, function_name: str):
         # Activation function definition
-        self.__map_activation_function = Activation.get_by_name(func_name)
+        self.__map_activation_function = Activation.get_by_name(function_name)
 
     def add_concept(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
                     exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
@@ -341,7 +346,7 @@ class FuzzyCognitiveMap:
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
         else:
             self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
-            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.global_func_args
+            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.__global_func_args
 
         self.__execution[concept_name] = [0.0]
 
@@ -381,7 +386,7 @@ class FuzzyCognitiveMap:
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
             else:
                 self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
-                self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.global_func_args
+                self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.__global_func_args
         else:
             raise Exception("Concept " + concept_name + " not found")
 
@@ -513,7 +518,7 @@ class FuzzyCognitiveMap:
             self.__iterations += 1
 
         for node in self.__topology:
-            self.__topology[node][NODE_VALUE] = self.__decision_function(self.__execution[node])
+            self.__topology[node][NODE_VALUE] = self.__map_decision_function(self.__execution[node])
 
     def search_concept_final_state(self, concept=None):
         """
@@ -528,14 +533,14 @@ class FuzzyCognitiveMap:
         if type(concept) == list:
             for concept, exec_values in self.__execution.items():
                 if concept in concept:
-                    result[concept] = self.__decision_function(exec_values)
+                    result[concept] = self.__map_decision_function(exec_values)
         elif concept is None:
             for concept, exec_values in self.__execution.items():
-                result[concept] = self.__decision_function(exec_values)
+                result[concept] = self.__map_decision_function(exec_values)
         else:
             for concept, exec_values in self.__execution.items():
                 if concept in concept:
-                    result[concept] = self.__decision_function(exec_values)
+                    result[concept] = self.__map_decision_function(exec_values)
         return result
 
     def get_final_state(self, nodes_type="target"):
@@ -552,13 +557,13 @@ class FuzzyCognitiveMap:
         result = {}
         for concept_id in self.__execution.keys():
             if nodes_type == "any":
-                result[concept_id] = self.__decision_function(self.__execution[concept_id])
+                result[concept_id] = self.__map_decision_function(self.__execution[concept_id])
             if nodes_type == "target":
                 if (self.__topology[concept_id][NODE_TYPE] == TYPE_DECISION
                         or self.__topology[concept_id][NODE_TYPE] == TYPE_REGRESOR):
-                    result[concept_id] = self.__decision_function(self.__execution[concept_id])
+                    result[concept_id] = self.__map_decision_function(self.__execution[concept_id])
             elif self.__topology[concept_id][NODE_TYPE] == nodes_type:
-                result[concept_id] = self.__decision_function(self.__execution[concept_id])
+                result[concept_id] = self.__map_decision_function(self.__execution[concept_id])
         return result
 
     def plot_execution(self, fig_name="map", limit=0, plot_all=False, path=""):
@@ -589,7 +594,7 @@ class FuzzyCognitiveMap:
         plt.savefig(path + fig_name + ".png")
         plt.close()
 
-    def to_string(self):
+    def get_topology_to_string(self):
         """
         Generate a string that describe current relations
         Returns:
