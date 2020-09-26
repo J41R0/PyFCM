@@ -112,7 +112,7 @@ def from_json(str_json: str):
                                is_active=active,
                                use_memory=use_mem,
                                exitation_function=exitation,
-                               activ_function=custom_function,
+                               activation_function=custom_function,
                                **custom_func_args)
         # adding relations
         for relation in data_dict['relations']:
@@ -303,7 +303,7 @@ class FuzzyCognitiveMap:
         self.__map_activation_function = new_function
 
     def add_concept(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
-                    exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
+                    exitation_function='KOSKO', activation_dict=None, activation_function=None, **kwargs):
         """
         Add new concept to map
         Args:
@@ -312,7 +312,7 @@ class FuzzyCognitiveMap:
             is_active: Define if node is active or not
             use_memory: Use memory in activation node process
             exitation_function: Custom function name for execution process
-            activ_function: Callable function for node activation, if none set global function
+            activation_function: Callable function for node activation, if none set global function
             activation_dict: activation dic for cont concepts according to found clusters in way =>
                 {'membership': [], 'val_list': []} and related by position.
             **kwargs: arguments for activation function
@@ -322,14 +322,14 @@ class FuzzyCognitiveMap:
         """
         self.__topology[concept_name] = {NODE_ACTIVE: is_active, NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
         self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name(exitation_function)
+        self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = exitation_function
         self.__topology[concept_name][NODE_TYPE] = node_type
-        # define result function
-        # self.topology[concept][NODE_RES_FUNC] = result_function
 
         # scale and normalize the values for fuzzy function
         # activation_dict = {'membership':[],'val_list':[]}
         if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR:
             self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
+            self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = 'MEAN'
             self.__topology[concept_name][NODE_TRAIN_ACTIVATION] = activation_dict
             # scale for only positive values
             self.__topology[concept_name][NODE_TRAIN_MIN] = abs(min(activation_dict['val_list']))
@@ -349,12 +349,15 @@ class FuzzyCognitiveMap:
         # define activation function
         if activation_dict is not None:
             self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
+            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'FUZZY'
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
-        elif activ_function is not None:
-            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_by_name(activ_function)
+        elif activation_function is not None:
+            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_by_name(activation_function)
+            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = activation_function
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
         else:
             self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
+            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.activation_function
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.__global_func_args
 
         self.__execution[concept_name] = [0.0]
@@ -507,9 +510,9 @@ class FuzzyCognitiveMap:
             if not self.__keep_execution():
                 extra_steps -= 1
             for arc in self.__arc_list:
-                origin = arc[ARC_ORIGIN]
-                dest = arc[ARC_DESTINY]
-                weight = arc[ARC_WEIGHT]
+                origin = arc[RELATION_ORIGIN]
+                dest = arc[RELATION_DESTINY]
+                weight = arc[RELATION_WEIGHT]
                 # set value to: sum(wij * Ai)
                 if self.__topology[origin][NODE_ACTIVE]:
                     self.__topology[dest][NODE_AUX].append(self.__topology[origin][NODE_VALUE] * weight)
@@ -598,7 +601,7 @@ class FuzzyCognitiveMap:
         graph.add_nodes_from(self.__topology.keys())
         for key in self.__topology.keys():
             for out_node in self.__topology[key][NODE_ARCS]:
-                graph.add_edge(key, out_node[ARC_DESTINY])
+                graph.add_edge(key, out_node[RELATION_DESTINY])
         nx.draw(graph)
         plt.savefig(path + fig_name + ".png")
         plt.close()
@@ -611,8 +614,8 @@ class FuzzyCognitiveMap:
         """
         result = ""
         for relation in self.__arc_list:
-            result += relation[ARC_ORIGIN] + " -> (" + str(relation[ARC_WEIGHT]) + ") -> " + relation[
-                ARC_DESTINY] + "\n"
+            result += relation[RELATION_ORIGIN] + " -> (" + str(relation[RELATION_WEIGHT]) + ") -> " + relation[
+                RELATION_DESTINY] + "\n"
         return result
 
     # private functions
