@@ -618,6 +618,55 @@ class FuzzyCognitiveMap:
                 RELATION_DESTINY] + "\n"
         return result
 
+    def to_json(self):
+        """
+        Generate the output JSON for current map
+
+        Returns: String in JSON format
+
+        """
+        result = {
+            'max_iter': self.max_iter,
+            'decision_function': self.decision_function,
+            'activation_function': self.activation_function,
+            'actv_func_params': self.__global_func_args,
+            'memory_influence': self.flag_mem_influence,
+            'stability_diff': self.stability_diff,
+            'stop_at_stabilize': self.flag_stop_at_stabilize,
+            'extra_steps': self.__extra_steps,
+            'weight': self.weight,
+            'concepts': [],
+            'relations': []
+        }
+
+        for concept_name in self.__topology:
+            # TODO: add all supported types
+            type_name = 'SIMPLE'
+            if self.__topology[concept_name][NODE_ACTIVE] == TYPE_DECISION:
+                type_name = 'DECISION'
+            concept_desc = {
+                'id': concept_name,
+                'is_active': self.__topology[concept_name][NODE_ACTIVE],
+                'type': type_name,
+                'activation': self.__topology[concept_name][NODE_VALUE]
+            }
+            if self.__topology[concept_name][NODE_USE_MEM] != self.flag_mem_influence:
+                concept_desc['use_memory'] = self.__topology[concept_name][NODE_USE_MEM]
+            if self.__topology[concept_name][NODE_ACTV_FUNC_NAME] != self.activation_function:
+                concept_desc['custom_function'] = self.__topology[concept_name][NODE_ACTV_FUNC_NAME]
+                concept_desc['custom_function_args'] = self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]
+            result['concepts'].append(concept_desc)
+
+        for relation in self.__arc_list:
+            relation_desc = {
+                'origin': relation[RELATION_ORIGIN],
+                'destiny': relation[RELATION_DESTINY],
+                'weight': relation[RELATION_WEIGHT]
+            }
+            result['relations'].append(relation_desc)
+
+        return json.dumps(result)
+
     # private functions
     def __fit(self, x, y):
         # TODO
