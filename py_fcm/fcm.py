@@ -272,7 +272,7 @@ class FuzzyCognitiveMap:
         self.flag_mem_influence = mem_influence
         # Activation function definition
         self.__map_activation_function = None
-        self.activation_function = activ_function
+        self.activation_function = ''
         self.set_map_activation_function(activ_function)
 
         # Set global function arguments
@@ -287,7 +287,11 @@ class FuzzyCognitiveMap:
         self.weight = 1
 
     def set_map_decision_function(self, function_name: str):
-        self.__map_decision_function = Decision.get_by_name(function_name)
+        new_function = Decision.get_by_name(function_name)
+        if new_function is None:
+            raise Exception("Unknown decision function '" + function_name + "'")
+        self.decision_function = function_name
+        self.__map_decision_function = new_function
 
     def set_map_activation_function(self, function_name: str):
         # Activation function definition
