@@ -632,7 +632,6 @@ class FuzzyCognitiveMap:
             'max_iter': self.max_iter,
             'decision_function': self.decision_function,
             'activation_function': self.activation_function,
-            'actv_func_args': self.__global_func_args,
             'memory_influence': self.flag_mem_influence,
             'stability_diff': self.stability_diff,
             'stop_at_stabilize': self.flag_stop_at_stabilize,
@@ -641,6 +640,8 @@ class FuzzyCognitiveMap:
             'concepts': [],
             'relations': []
         }
+        if len(self.__global_func_args) > 0:
+            result['actv_func_args'] = self.__global_func_args
 
         for concept_name in self.__topology:
             # TODO: add all supported types
@@ -657,7 +658,8 @@ class FuzzyCognitiveMap:
                 concept_desc['use_memory'] = self.__topology[concept_name][NODE_USE_MEM]
             if self.__topology[concept_name][NODE_ACTV_FUNC_NAME] != self.activation_function:
                 concept_desc['custom_function'] = self.__topology[concept_name][NODE_ACTV_FUNC_NAME]
-                concept_desc['custom_function_args'] = self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]
+                if len(self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]) > 0:
+                    concept_desc['custom_function_args'] = self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]
             result['concepts'].append(concept_desc)
 
         for relation in self.__arc_list:
