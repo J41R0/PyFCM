@@ -35,16 +35,20 @@ def from_json(str_json: str):
       ]
     }
     Structure:
-    * iter: max map iterations
-    * activation_function: defalt activation function
-    * actv_func_params: object (JSON serializable) to describe required function params
-    * memory_influence: use memory or not
-    * result: define the resutl value:
+    * iter: max map iterations, required.
+    * activation_function: defalt activation function, required
+    * actv_func_params: object (JSON serializable) to describe required function params, optional with no default value
+    * memory_influence: use memory or not, required
+    * stability_diff: difference to consider a stable FCM state, optional with 0.001 by default
+    * stop_at_stabilize: stop the inference process when the FCM reach a stable state, optional True by default
+    * extra_steps: additional steps to execute after reach a stable state, optionay with 5 by default
+    * weight: FCM weight ti be used in joint map process, optional with 1 by default
+    * result: define the result value, required:
         - "LAST": last inference value
         - "MEAN": whole execution average value
         - "EXITED": Highest last execution value in decision nodes
-    * concepts: a concept list describing each concept
-    * relations: a relations list between defined concepts
+    * concepts: a concept list describing each concept, required
+    * relations: a relations list between defined concepts, required
 
     Concept descrption:
     * id: concept id
@@ -83,13 +87,34 @@ def from_json(str_json: str):
     try:
         data_dict = json.loads(str_json)
         actv_param = {}
+        stability_diff = 0.001
+        stop_at_stabilize = True
+        extra_steps = 5
+        weight = 1
         if 'actv_func_args' in data_dict:
             actv_param = data_dict['actv_func_args']
+
+        if 'stability_diff' in data_dict:
+            stability_diff = data_dict['stability_diff']
+
+        if 'stop_at_stabilize' in data_dict:
+            stop_at_stabilize = data_dict['stop_at_stabilize']
+
+        if 'extra_steps' in data_dict:
+            extra_steps = data_dict['extra_steps']
+
+        if 'weight' in data_dict:
+            weight = data_dict['weight']
+
         my_fcm = FuzzyCognitiveMap(max_it=data_dict['iter'],
                                    decision_function=data_dict['result'],
                                    mem_influence=data_dict['memory_influence'],
                                    activ_function=data_dict['activation_function'],
+                                   stability_diff=stability_diff,
+                                   stabilize=stop_at_stabilize,
+                                   extra_steps=extra_steps,
                                    **actv_param)
+        my_fcm.weight = weight
         # adding concepts
         for concept in data_dict['concepts']:
             use_mem = None
@@ -220,7 +245,7 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
 
 class FuzzyCognitiveMap:
 
-    def __init__(self, max_it=200, extra_steps=5, stabilize=True, stab_diff=0.001, decision_function="MEAN",
+    def __init__(self, max_it=200, extra_steps=5, stabilize=True, stability_diff=0.001, decision_function="MEAN",
                  mem_influence=False, activ_function="sigmoid_hip", **kwargs):
         """
         Fuzzy Cognitive Map Class, may be used like estimator.
@@ -228,7 +253,7 @@ class FuzzyCognitiveMap:
             max_it: Max map iterations
             extra_steps: Extra inference steps after end iterations
             stabilize: Exec map until stabilize
-            stab_diff: Stability threshold value
+            stability_diff: Stability threshold value
             decision_function: Method for select winner decision node by its values during execution.
                 LAST: Last inference node value
                 MEAN: Highest average of all execution values in decision nodes
@@ -263,7 +288,7 @@ class FuzzyCognitiveMap:
         else:
             self.__extra_steps = 1
         # Stability threshold
-        self.stability_diff = stab_diff
+        self.stability_diff = stability_diff
         # Activation when concept is found, may be certainty
         # self.init_activation = init_activ
         # TODO: parametrize function per output feature
