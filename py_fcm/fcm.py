@@ -17,9 +17,9 @@ def from_json(str_json: str):
     {
      "iter": 500,
      "activation_function": "sigmoid",
-     "actv_func_params": {"lambda_val":1},
+     "actv_func_args": {"lambda_val":1},
      "memory_influence": false,
-     "result": "last",
+     "result": "LAST",
      "concepts" :
       [
         {"id": "concept_1", "type": "SIMPLE", "activation": 0.5},
@@ -39,7 +39,10 @@ def from_json(str_json: str):
     * activation_function: defalt activation function
     * actv_func_params: object (JSON serializable) to describe required function params
     * memory_influence: use memory or not
-    * result: define the resutl value => "last": last inference value, "average": whole execution average value
+    * result: define the resutl value:
+        - "LAST": last inference value
+        - "MEAN": whole execution average value
+        - "EXITED": Highest last execution value in decision nodes
     * concepts: a concept list describing each concept
     * relations: a relations list between defined concepts
 
@@ -80,8 +83,8 @@ def from_json(str_json: str):
     try:
         data_dict = json.loads(str_json)
         actv_param = {}
-        if 'actv_func_params' in data_dict:
-            actv_param = data_dict['actv_func_params']
+        if 'actv_func_args' in data_dict:
+            actv_param = data_dict['actv_func_args']
         my_fcm = FuzzyCognitiveMap(max_it=data_dict['iter'],
                                    decision_function=data_dict['result'],
                                    mem_influence=data_dict['memory_influence'],
@@ -629,7 +632,7 @@ class FuzzyCognitiveMap:
             'max_iter': self.max_iter,
             'decision_function': self.decision_function,
             'activation_function': self.activation_function,
-            'actv_func_params': self.__global_func_args,
+            'actv_func_args': self.__global_func_args,
             'memory_influence': self.flag_mem_influence,
             'stability_diff': self.stability_diff,
             'stop_at_stabilize': self.flag_stop_at_stabilize,
