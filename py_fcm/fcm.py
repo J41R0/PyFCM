@@ -158,9 +158,9 @@ def from_json(str_json: str):
 def join_maps(map_set, node_strategy='union', value_strategy="average", relation_strategy="average",
               ignore_zeros=False):
     """
-    Join a set of FuzzyCognitiveMap in a new one according to defined strategy.All nodes will be set to default behavior
-    to avid mixing issues in the result. The final map also will be created with default behavior so, is required to
-    update the map behavior after join process. This default setting will be updated on future library versions.
+    Join a set of FuzzyCognitiveMap in a new one according to defined strategy. All nodes will be set to default
+    behaviour to avid mixing issues in the result. The final map also will be created with default behavior so, is
+    required to update the map behavior after join process. Default setting will be updated on future library versions.
     Args:
         map_set: An iterable object that contains the FCMs
         node_strategy: Strategy to join all maps nodes
@@ -170,7 +170,6 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
             highest: Select the highest node value as initial node state
             lowest: Select the lowest node value as initial node state
             average: Select the average of node values as initial node state
-            weighted_average: Select the weighted_average of node values based on FCMs weight as initial node state
         relation_strategy: Strategy to define the value for repeated relations weight in map topology
             highest: Select the highest relation value as new relation value
             lowest: Select the lowest relation value as new relation value
@@ -180,70 +179,85 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
     Returns: A new FuzzyCognitiveMap generated using defined strategies
 
     """
-    result_fcm = FuzzyCognitiveMap()
+    nodes_desc = {}
+    relations = []
     is_first = True
-    nodes_set = set()
+    final_map = {}
     for fcm in map_set:
+        map_desc = json.loads(fcm.to_json())
+        for relation in map_desc['relations']:
+            relations.append(relation)
         if is_first:
             is_first = False
-            nodes = fcm.search_concept_final_state()
-            nodes_set = set(nodes.keys())
-        if node_strategy == 'union':
-            nodes = fcm.search_concept_final_state()
-            nodes_set = nodes_set.union(nodes.keys())
-
-        if node_strategy == 'intersection':
-            nodes = fcm.search_concept_final_state()
-            nodes_set = nodes_set.intersection(nodes.keys())
-
-    for node in nodes_set:
-        result_fcm.add_concept(node)
-        node_values = []
-        fcm_weights = []
-        node_relations = []
-        node_grouped_relations = defaultdict(list)
-        for fcm in map_set:
-            curr_val = fcm.get_concept_value(node)
-            if curr_val is not None:
-                if ignore_zeros:
-                    if curr_val != 0:
-                        node_values.append(curr_val)
-                else:
-                    node_values.append(curr_val)
-
-            fcm_weights.append(fcm.weight)
-            node_relations.extend(fcm.get_concept_outgoing_relations(node))
-
-        for other_node, weight in node_relations:
-            if other_node in nodes_set:
-                node_grouped_relations[other_node].append(weight)
-
-        num_elements = len(node_values)
+            final_map = map_desc
+            for concept in map_desc['concepts']:
+                nodes_desc[concept['id']] = concept
+                nodes_desc[concept['id']]['accumulation'] = [nodes_desc[concept['id']]['activation']]
+        else:
+            new_node_set = {}
+            for concept in map_desc['concepts']:
+                new_node_set[concept['id']] = concept
+            if node_strategy == 'union':
+                for key in new_node_set:
+                    if key in nodes_desc:
+                        nodes_desc[key]['accumulation'].append(new_node_set[key]['activation'])
+                    else:
+                        nodes_desc[key] = new_node_set[key]
+                        nodes_desc[key]['accumulation'] = [nodes_desc[key]['activation']]
+            if node_strategy == 'intersection':
+                node_set = set(nodes_desc.keys())
+                node_set = node_set.intersection(new_node_set.keys())
+                to_remove = []
+                for key in nodes_desc:
+                    if key not in node_set:
+                        to_remove.append(key)
+                    else:
+                        nodes_desc[key]['accumulation'].append(new_node_set[key]['activation'])
+                for key in to_remove:
+                    nodes_desc.pop(key)
+    final_concepts = []
+    for key in nodes_desc:
         if value_strategy == "highest":
-            result_fcm.init_concept(node, max(node_values))
+            nodes_desc[key]['activation'] = max(nodes_desc[key]['accumulation'])
         if value_strategy == "lowest":
-            result_fcm.init_concept(node, min(node_values))
+            nodes_desc[key]['activation'] = min(nodes_desc[key]['accumulation'])
         if value_strategy == "average":
+            num_elements = len(nodes_desc[key]['accumulation'])
             if num_elements > 0:
-                result_fcm.init_concept(node, sum(node_values) / num_elements)
-        if value_strategy == "weighted_average":
-            if num_elements > 0:
-                node_values = np.array(node_values)
-                fcm_weights = np.array(fcm_weights)
-                result_fcm.init_concept(node, int(node_values.dot(fcm_weights)) / num_elements)
+                nodes_desc[key]['activation'] = sum(nodes_desc[key]['accumulation']) / num_elements
+        nodes_desc[key].pop('accumulation')
+        final_concepts.append(nodes_desc[key])
 
-        if relation_strategy == "highest":
-            for other_node in node_grouped_relations:
-                result_fcm.add_relation(node, other_node, max(node_grouped_relations[other_node]))
-        if relation_strategy == "lowest":
-            for other_node in node_grouped_relations:
-                result_fcm.add_relation(node, other_node, min(node_grouped_relations[other_node]))
-        if relation_strategy == "average":
-            for other_node in node_grouped_relations:
-                if len(node_grouped_relations[other_node]) > 0:
-                    result_fcm.add_relation(node, other_node, sum(node_grouped_relations[other_node]) / len(
-                        node_grouped_relations[other_node]))
-    return result_fcm
+    relation_data = {}
+    rel_separator = ' |=====> '
+    for curr_relation in relations:
+        relation_name = curr_relation['origin'] + rel_separator + curr_relation['destiny']
+        if relation_name not in relation_data:
+            relation_data[relation_name] = [curr_relation['weight']]
+        else:
+            relation_data[relation_name].append(curr_relation['weight'])
+
+    final_relations = []
+    for curr_relation in relation_data:
+        origin = curr_relation.split(rel_separator)[0]
+        destiny = curr_relation.split(rel_separator)[1]
+        if origin in nodes_desc and destiny in nodes_desc:
+            new_relation = {
+                'origin': origin,
+                'destiny': destiny
+            }
+            if relation_strategy == "highest":
+                new_relation['weight'] = max(relation_data[curr_relation])
+            if relation_strategy == "lowest":
+                new_relation['weight'] = min(relation_data[curr_relation])
+            if relation_strategy == "average":
+                new_relation['weight'] = sum(relation_data[curr_relation]) / len(relation_data[curr_relation])
+            final_relations.append(new_relation)
+
+    final_map['concepts'] = final_concepts
+    final_map['relations'] = final_relations
+    final_json = json.dumps(final_map)
+    return from_json(final_json)
 
 
 class FuzzyCognitiveMap:
