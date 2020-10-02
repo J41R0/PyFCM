@@ -415,7 +415,7 @@ class FuzzyCognitiveMap:
     def set_concept_properties(self, concept_name: str, node_type=None, is_active=None, use_memory=None,
                                exitation_function=None, activation_dict=None, activ_function=None, **kwargs):
         if concept_name in self.__topology:
-            if is_active is not None:
+            if is_active is not None and type(is_active) == bool:
                 self.__topology[concept_name][NODE_ACTIVE] = is_active
             if exitation_function is not None:
                 new_function = Excitation.get_by_name(exitation_function)
@@ -446,7 +446,7 @@ class FuzzyCognitiveMap:
                     activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.__topology[concept_name][
                         NODE_TRAIN_FMAX]
 
-            if use_memory is not None:
+            if use_memory is not None and type(use_memory) == bool:
                 self.__topology[concept_name][NODE_USE_MEM] = use_memory
             else:
                 self.__topology[concept_name][NODE_USE_MEM] = self.flag_mem_influence
