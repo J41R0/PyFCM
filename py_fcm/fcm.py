@@ -15,15 +15,15 @@ def from_json(str_json: str):
     """
     Function to genrate a FCM object form a JSON like:
     {
-     "iter": 500,
+     "max_iter": 500,
      "activation_function": "sigmoid",
      "actv_func_args": {"lambda_val":1},
      "memory_influence": false,
-     "result": "LAST",
+     "decision_function": "LAST",
      "concepts" :
       [
         {"id": "concept_1", "type": "SIMPLE", "activation": 0.5},
-        {"id": "concept_2", "type": "DECISION", "custom_function": "sum_w", "custom_func_args": {"weight":0.3}},
+        {"id": "concept_2", "type": "DECISION", "custom_function": "sum_w", "custom_function_args": {"weight":0.3}},
         {"id": "concept_3", "type": "SIMPLE", "memory_influence":true },
         {"id": "concept_4", "type": "SIMPLE", "custom_function": "saturation", "activation": 0.3}
       ],
@@ -43,7 +43,7 @@ def from_json(str_json: str):
     * stop_at_stabilize: stop the inference process when the FCM reach a stable state, optional True by default
     * extra_steps: additional steps to execute after reach a stable state, optionay with 5 by default
     * weight: FCM weight ti be used in joint map process, optional with 1 by default
-    * result: define the result value, required:
+    * decision_function: define the decision function to get the final value, required:
         - "LAST": last inference value
         - "MEAN": whole execution average value
         - "EXITED": Highest last execution value in decision nodes
@@ -55,7 +55,7 @@ def from_json(str_json: str):
     * type: node type => "SIMPLE": regular node and default ,"DECISION": target for a classification problems
     * active: define if node is active or not, by default is considered active
     * custom_function: custom node function, by default use map defined function
-    * custom_func_args: object (JSON serializable) to describe custom_function params
+    * custom_function_args: object (JSON serializable) to describe custom_function params
     * memory_influence: use memory or not, by default use FCM memory definition
     * exitation_function: node exitation function, KOSKO by default
     * activation: initial node activation value, by default 0
@@ -106,8 +106,8 @@ def from_json(str_json: str):
         if 'weight' in data_dict:
             weight = data_dict['weight']
 
-        my_fcm = FuzzyCognitiveMap(max_it=data_dict['iter'],
-                                   decision_function=data_dict['result'],
+        my_fcm = FuzzyCognitiveMap(max_it=data_dict['max_iter'],
+                                   decision_function=data_dict['decision_function'],
                                    mem_influence=data_dict['memory_influence'],
                                    activ_function=data_dict['activation_function'],
                                    stability_diff=stability_diff,
@@ -130,8 +130,8 @@ def from_json(str_json: str):
             if 'custom_function' in concept:
                 custom_function = concept['custom_function']
             custom_func_args = {}
-            if 'custom_func_args' in concept:
-                custom_func_args = concept['custom_func_args']
+            if 'custom_function_args' in concept:
+                custom_func_args = concept['custom_function_args']
             concept_type = TYPE_SIMPLE
             if concept['type'] == 'DECISION':
                 concept_type = TYPE_DECISION
@@ -142,6 +142,9 @@ def from_json(str_json: str):
                                exitation_function=exitation,
                                activation_function=custom_function,
                                **custom_func_args)
+            if 'activation' in concept:
+                my_fcm.init_concept(concept['id'], concept['activation'])
+
         # adding relations
         for relation in data_dict['relations']:
             my_fcm.add_relation(origin_concept=relation['origin'],
@@ -589,7 +592,7 @@ class FuzzyCognitiveMap:
         Args:
             nodes_type: Type of nodes inference result
                 "any": calc all nodes final state
-                "target": calc regression or decision nodes final state
+                "target": calc only DECISION or REGRESSION node types final state
 
         Returns: Dict in way: {"<node_id>": <final_value>}
 
