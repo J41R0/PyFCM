@@ -330,6 +330,8 @@ class FuzzyCognitiveMap:
 
         # map weight for join process
         self.weight = 1
+        self.default_concept = {}
+        self.set_default_concept_properties()
 
     def set_map_decision_function(self, function_name: str):
         # Decision function definition
@@ -446,6 +448,42 @@ class FuzzyCognitiveMap:
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.__global_func_args
         else:
             raise Exception("Concept " + concept_name + " not found")
+
+    def set_default_concept_properties(self, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
+                                       exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
+
+        self.default_concept[NODE_ACTIVE] = is_active
+        self.default_concept[NODE_EXEC_FUNC] = Excitation.get_by_name(exitation_function)
+        self.default_concept[NODE_TYPE] = node_type
+
+        if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR:
+            self.default_concept[NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
+            self.default_concept[NODE_TRAIN_ACTIVATION] = activation_dict
+            # scale for only positive values
+            self.default_concept[NODE_TRAIN_MIN] = abs(min(activation_dict['val_list']))
+            for pos in range(len(activation_dict['val_list'])):
+                activation_dict['val_list'][pos] += self.default_concept[NODE_TRAIN_MIN]
+            # normalize positive values
+            self.default_concept[NODE_TRAIN_FMAX] = max(activation_dict['val_list'])
+            for pos in range(len(activation_dict['val_list'])):
+                activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.default_concept[
+                    NODE_TRAIN_FMAX]
+
+        if use_memory is not None:
+            self.default_concept[NODE_USE_MEM] = use_memory
+        else:
+            self.default_concept[NODE_USE_MEM] = self.flag_mem_influence
+
+        # define activation function
+        if activation_dict is not None:
+            self.default_concept[NODE_ACTV_FUNC] = Activation.fuzzy_set
+            self.default_concept[NODE_ACTV_FUNC_ARGS] = activation_dict
+        elif activ_function is not None:
+            self.default_concept[NODE_ACTV_FUNC] = Activation.get_by_name(activ_function)
+            self.default_concept[NODE_ACTV_FUNC_ARGS] = kwargs
+        else:
+            self.default_concept[NODE_ACTV_FUNC] = self.__map_activation_function
+            self.default_concept[NODE_ACTV_FUNC_ARGS] = self.__global_func_args
 
     def get_concept_value(self, concept_name: str):
         if concept_name in self.__topology:
