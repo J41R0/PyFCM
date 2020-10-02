@@ -476,7 +476,7 @@ class FuzzyCognitiveMap:
         if is_valid_type(node_type):
             self.default_concept[NODE_TYPE] = node_type
         else:
-            self.default_concept[NODE_TYPE] = TYPE_SIMPLE
+            raise Exception("Unknown node type")
 
         if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR:
             self.default_concept[NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
@@ -492,7 +492,7 @@ class FuzzyCognitiveMap:
                 activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.default_concept[
                     NODE_TRAIN_FMAX]
 
-        if use_memory is not None:
+        if use_memory is not None and type(use_memory) == bool:
             self.default_concept[NODE_USE_MEM] = use_memory
         else:
             self.default_concept[NODE_USE_MEM] = self.flag_mem_influence
@@ -508,7 +508,7 @@ class FuzzyCognitiveMap:
             self.default_concept[NODE_ACTV_FUNC_ARGS] = kwargs
         else:
             self.default_concept[NODE_ACTV_FUNC] = self.__map_activation_function
-            self.default_concept[NODE_ACTV_FUNC_NAME] = self.activation_functionon
+            self.default_concept[NODE_ACTV_FUNC_NAME] = self.activation_function
             self.default_concept[NODE_ACTV_FUNC_ARGS] = self.__global_func_args
 
     def get_concept_value(self, concept_name: str):
