@@ -412,20 +412,27 @@ class FuzzyCognitiveMap:
 
         self.__execution[concept_name] = [0.0]
 
-    def set_concept_properties(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
-                               exitation_function='KOSKO', activation_dict=None, activ_function=None, **kwargs):
+    def set_concept_properties(self, concept_name: str, node_type=None, is_active=None, use_memory=None,
+                               exitation_function=None, activation_dict=None, activ_function=None, **kwargs):
         if concept_name in self.__topology:
-            self.__topology[concept_name][NODE_ACTIVE] = is_active
-            self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name(exitation_function)
-            self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = exitation_function
-            if is_valid_type(node_type):
-                self.__topology[concept_name][NODE_TYPE] = node_type
-            else:
-                self.__topology[concept_name][NODE_TYPE] = TYPE_SIMPLE
+            if is_active is not None:
+                self.__topology[concept_name][NODE_ACTIVE] = is_active
+            if exitation_function is not None:
+                new_function = Excitation.get_by_name(exitation_function)
+                if new_function is not None:
+                    self.__topology[concept_name][NODE_EXEC_FUNC] = new_function
+                    self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = exitation_function
+                else:
+                    raise Exception("Unknown exitation function: " + exitation_function)
+            if node_type is not None:
+                if is_valid_type(node_type):
+                    self.__topology[concept_name][NODE_TYPE] = node_type
+                else:
+                    raise Exception("Unknown node type")
 
             # scale and normalize the values for fuzzy function
             # activation_dict = {'membership':[],'val_list':[]}
-            if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR:
+            if (node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR) and activation_dict is not None:
                 self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
                 self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = 'MEAN'
                 self.__topology[concept_name][NODE_TRAIN_ACTIVATION] = activation_dict
