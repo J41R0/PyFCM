@@ -349,8 +349,8 @@ class FuzzyCognitiveMap:
         self.activation_function = function_name
         self.__map_activation_function = new_function
 
-    def add_concept(self, concept_name: str, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
-                    exitation_function='KOSKO', activation_dict=None, activation_function=None, **kwargs):
+    def add_concept(self, concept_name: str, node_type=None, is_active=None, use_memory=None,
+                    exitation_function=None, activation_dict=None, activation_function=None, **kwargs):
         """
         Add new concept to map
         Args:
@@ -367,13 +367,28 @@ class FuzzyCognitiveMap:
         Returns: None
 
         """
-        self.__topology[concept_name] = {NODE_ACTIVE: is_active, NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
-        self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name(exitation_function)
-        self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = exitation_function
-        if is_valid_type(node_type):
+        self.__topology[concept_name] = {NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
+
+        if is_active is not None and type(is_active) == bool:
+            self.__topology[concept_name][NODE_ACTIVE] = is_active
+        else:
+            self.__topology[concept_name][NODE_ACTIVE] = self.default_concept[NODE_ACTIVE]
+
+        if exitation_function is not None:
+            function = Excitation.get_by_name(exitation_function)
+            if function is not None:
+                self.__topology[concept_name][NODE_EXEC_FUNC] = function
+                self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = exitation_function
+            else:
+                raise Exception("Unknown exitation function: " + exitation_function)
+        else:
+            self.__topology[concept_name][NODE_EXEC_FUNC] = self.default_concept[NODE_EXEC_FUNC]
+            self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = self.default_concept[NODE_EXEC_FUNC_NAME]
+
+        if is_valid_type(node_type) and node_type is not None:
             self.__topology[concept_name][NODE_TYPE] = node_type
         else:
-            self.__topology[concept_name][NODE_TYPE] = TYPE_SIMPLE
+            self.__topology[concept_name][NODE_TYPE] = self.default_concept[NODE_TYPE]
 
         # scale and normalize the values for fuzzy function
         # activation_dict = {'membership':[],'val_list':[]}
@@ -391,10 +406,10 @@ class FuzzyCognitiveMap:
                 activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.__topology[concept_name][
                     NODE_TRAIN_FMAX]
 
-        if use_memory is not None:
+        if use_memory is not None and type(use_memory) == bool:
             self.__topology[concept_name][NODE_USE_MEM] = use_memory
         else:
-            self.__topology[concept_name][NODE_USE_MEM] = self.flag_mem_influence
+            self.__topology[concept_name][NODE_USE_MEM] = self.default_concept[NODE_USE_MEM]
 
         # define activation function
         if activation_dict is not None:
@@ -402,13 +417,17 @@ class FuzzyCognitiveMap:
             self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'FUZZY'
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
         elif activation_function is not None:
-            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_by_name(activation_function)
-            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = activation_function
-            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
+            actv_function = Activation.get_by_name(activation_function)
+            if actv_function is not None:
+                self.__topology[concept_name][NODE_ACTV_FUNC] = actv_function
+                self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = activation_function
+                self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
+            else:
+                raise Exception("Unknown ativation function: " + activation_function)
         else:
-            self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
-            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.activation_function
-            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.__global_func_args
+            self.__topology[concept_name][NODE_ACTV_FUNC] = self.default_concept[NODE_ACTV_FUNC]
+            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.default_concept[NODE_ACTV_FUNC_NAME]
+            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.default_concept[NODE_ACTV_FUNC_ARGS]
 
         self.__execution[concept_name] = [0.0]
 
