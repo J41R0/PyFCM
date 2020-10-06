@@ -155,7 +155,7 @@ def from_json(str_json: str):
         raise Exception("Cannot load json data due: " + str(err))
 
 
-def join_maps(map_set, node_strategy='union', value_strategy="average", relation_strategy="average",
+def join_maps(map_set, concept_strategy='union', value_strategy="average", relation_strategy="average",
               ignore_zeros=False):
     """
     Join a set of FuzzyCognitiveMap in a new one according to defined strategy. All nodes will be set to default
@@ -163,7 +163,7 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
     required to update the map behavior after join process. Default setting will be updated on future library versions.
     Args:
         map_set: An iterable object that contains the FCMs
-        node_strategy: Strategy to join all maps nodes
+        concept_strategy: Strategy to join all maps nodes
             union: the new FuzzyCognitiveMap will have the set union of nodes in map_set
             intersection: the new FuzzyCognitiveMap will have the set intersection of nodes in  map_set
         value_strategy: Strategy to define the initial state of map nodes
@@ -179,6 +179,16 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
     Returns: A new FuzzyCognitiveMap generated using defined strategies
 
     """
+    concept_strategies = {'union', 'intersection'}
+    value_strategies = {'highest', 'lowest', 'average'}
+    relation_strategies = {'highest', 'lowest', 'average'}
+    if concept_strategy not in concept_strategies:
+        raise Exception("Unknown concept strategy: " + concept_strategy)
+    if value_strategy not in value_strategies:
+        raise Exception("Unknown value strategy: " + value_strategy)
+    if relation_strategy not in relation_strategies:
+        raise Exception("Unknown relation strategy: " + relation_strategy)
+
     nodes_desc = {}
     relations = []
     is_first = True
@@ -197,14 +207,14 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
             new_node_set = {}
             for concept in map_desc['concepts']:
                 new_node_set[concept['id']] = concept
-            if node_strategy == 'union':
+            if concept_strategy == 'union':
                 for key in new_node_set:
                     if key in nodes_desc:
                         nodes_desc[key]['accumulation'].append(new_node_set[key]['activation'])
                     else:
                         nodes_desc[key] = new_node_set[key]
                         nodes_desc[key]['accumulation'] = [nodes_desc[key]['activation']]
-            if node_strategy == 'intersection':
+            if concept_strategy == 'intersection':
                 node_set = set(nodes_desc.keys())
                 node_set = node_set.intersection(new_node_set.keys())
                 to_remove = []
