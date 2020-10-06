@@ -226,7 +226,10 @@ def join_maps(map_set, node_strategy='union', value_strategy="average", relation
             if num_elements > 0:
                 nodes_desc[key]['activation'] = sum(nodes_desc[key]['accumulation']) / num_elements
         nodes_desc[key].pop('accumulation')
-        final_concepts.append(nodes_desc[key])
+        if nodes_desc[key]['activation'] != 0:
+            final_concepts.append(nodes_desc[key])
+        elif not ignore_zeros:
+            final_concepts.append(nodes_desc[key])
 
     relation_data = {}
     rel_separator = ' |=====> '
