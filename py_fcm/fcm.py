@@ -37,7 +37,7 @@ def from_json(str_json: str):
     Structure:
     * iter: max map iterations, required.
     * activation_function: defalt activation function, required
-    * actv_func_params: object (JSON serializable) to describe required function params, optional with no default value
+    * activation_function_args: object (JSON serializable) to describe required function params, optional value
     * memory_influence: use memory or not, required
     * stability_diff: difference to consider a stable FCM state, optional with 0.001 by default
     * stop_at_stabilize: stop the inference process when the FCM reach a stable state, optional True by default
@@ -91,8 +91,8 @@ def from_json(str_json: str):
         stop_at_stabilize = True
         extra_steps = 5
         weight = 1
-        if 'actv_func_args' in data_dict:
-            actv_param = data_dict['actv_func_args']
+        if 'activation_function_args' in data_dict:
+            actv_param = data_dict['activation_function_args']
 
         if 'stability_diff' in data_dict:
             stability_diff = data_dict['stability_diff']
@@ -783,7 +783,7 @@ class FuzzyCognitiveMap:
             'relations': []
         }
         if len(self.__global_func_args) > 0:
-            result['actv_func_args'] = self.__global_func_args
+            result['activation_function_args'] = self.__global_func_args
 
         for concept_name in self.__topology:
             # TODO: add all supported types
