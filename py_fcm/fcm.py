@@ -572,7 +572,7 @@ class FuzzyCognitiveMap:
         Returns: None
 
         """
-        if destiny_concept in self.__topology:
+        if destiny_concept in self.__topology and origin_concept in self.__topology:
             self.__topology[origin_concept][NODE_ARCS].append((destiny_concept, weight))
             self.__arc_list.append((destiny_concept, weight, origin_concept))
 
