@@ -330,7 +330,7 @@ class FuzzyCognitiveMap:
 
         # map weight for join process
         self.weight = 1
-        self.default_concept = {}
+        self._default_concept = {}
         self.set_default_concept_properties()
 
     def set_map_decision_function(self, function_name: str):
@@ -372,7 +372,7 @@ class FuzzyCognitiveMap:
         if is_active is not None and type(is_active) == bool:
             self.__topology[concept_name][NODE_ACTIVE] = is_active
         else:
-            self.__topology[concept_name][NODE_ACTIVE] = self.default_concept[NODE_ACTIVE]
+            self.__topology[concept_name][NODE_ACTIVE] = self._default_concept[NODE_ACTIVE]
 
         if exitation_function is not None:
             function = Excitation.get_by_name(exitation_function)
@@ -382,13 +382,13 @@ class FuzzyCognitiveMap:
             else:
                 raise Exception("Unknown exitation function: " + exitation_function)
         else:
-            self.__topology[concept_name][NODE_EXEC_FUNC] = self.default_concept[NODE_EXEC_FUNC]
-            self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = self.default_concept[NODE_EXEC_FUNC_NAME]
+            self.__topology[concept_name][NODE_EXEC_FUNC] = self._default_concept[NODE_EXEC_FUNC]
+            self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = self._default_concept[NODE_EXEC_FUNC_NAME]
 
         if is_valid_type(node_type) and node_type is not None:
             self.__topology[concept_name][NODE_TYPE] = node_type
         else:
-            self.__topology[concept_name][NODE_TYPE] = self.default_concept[NODE_TYPE]
+            self.__topology[concept_name][NODE_TYPE] = self._default_concept[NODE_TYPE]
 
         # scale and normalize the values for fuzzy function
         # activation_dict = {'membership':[],'val_list':[]}
@@ -409,7 +409,7 @@ class FuzzyCognitiveMap:
         if use_memory is not None and type(use_memory) == bool:
             self.__topology[concept_name][NODE_USE_MEM] = use_memory
         else:
-            self.__topology[concept_name][NODE_USE_MEM] = self.default_concept[NODE_USE_MEM]
+            self.__topology[concept_name][NODE_USE_MEM] = self._default_concept[NODE_USE_MEM]
 
         # define activation function
         if activation_dict is not None:
@@ -425,9 +425,9 @@ class FuzzyCognitiveMap:
             else:
                 raise Exception("Unknown ativation function: " + activation_function)
         else:
-            self.__topology[concept_name][NODE_ACTV_FUNC] = self.default_concept[NODE_ACTV_FUNC]
-            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.default_concept[NODE_ACTV_FUNC_NAME]
-            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.default_concept[NODE_ACTV_FUNC_ARGS]
+            self.__topology[concept_name][NODE_ACTV_FUNC] = self._default_concept[NODE_ACTV_FUNC]
+            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self._default_concept[NODE_ACTV_FUNC_NAME]
+            self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self._default_concept[NODE_ACTV_FUNC_ARGS]
 
         self.__execution[concept_name] = [0.0]
 
@@ -494,55 +494,55 @@ class FuzzyCognitiveMap:
                                        exitation_function='KOSKO', activation_dict=None, activation_function=None,
                                        **kwargs):
         if is_active is not None and type(is_active) == bool:
-            self.default_concept[NODE_ACTIVE] = is_active
+            self._default_concept[NODE_ACTIVE] = is_active
 
         new_function = Excitation.get_by_name(exitation_function)
         if new_function is not None:
-            self.default_concept[NODE_EXEC_FUNC] = new_function
-            self.default_concept[NODE_EXEC_FUNC_NAME] = exitation_function
+            self._default_concept[NODE_EXEC_FUNC] = new_function
+            self._default_concept[NODE_EXEC_FUNC_NAME] = exitation_function
         else:
             raise Exception("Unknown exitation function: " + exitation_function)
         if is_valid_type(node_type):
-            self.default_concept[NODE_TYPE] = node_type
+            self._default_concept[NODE_TYPE] = node_type
         else:
             raise Exception("Unknown node type")
 
         if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR and activation_dict is not None:
-            self.default_concept[NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
-            self.default_concept[NODE_EXEC_FUNC_NAME] = 'MEAN'
-            self.default_concept[NODE_TRAIN_ACTIVATION] = activation_dict
+            self._default_concept[NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
+            self._default_concept[NODE_EXEC_FUNC_NAME] = 'MEAN'
+            self._default_concept[NODE_TRAIN_ACTIVATION] = activation_dict
             # scale for only positive values
-            self.default_concept[NODE_TRAIN_MIN] = abs(min(activation_dict['val_list']))
+            self._default_concept[NODE_TRAIN_MIN] = abs(min(activation_dict['val_list']))
             for pos in range(len(activation_dict['val_list'])):
-                activation_dict['val_list'][pos] += self.default_concept[NODE_TRAIN_MIN]
+                activation_dict['val_list'][pos] += self._default_concept[NODE_TRAIN_MIN]
             # normalize positive values
-            self.default_concept[NODE_TRAIN_FMAX] = max(activation_dict['val_list'])
+            self._default_concept[NODE_TRAIN_FMAX] = max(activation_dict['val_list'])
             for pos in range(len(activation_dict['val_list'])):
-                activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.default_concept[
+                activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self._default_concept[
                     NODE_TRAIN_FMAX]
 
         if use_memory is not None and type(use_memory) == bool:
-            self.default_concept[NODE_USE_MEM] = use_memory
+            self._default_concept[NODE_USE_MEM] = use_memory
         else:
-            self.default_concept[NODE_USE_MEM] = self.flag_mem_influence
+            self._default_concept[NODE_USE_MEM] = self.flag_mem_influence
 
         # define activation function
         if activation_dict is not None:
-            self.default_concept[NODE_ACTV_FUNC] = Activation.fuzzy_set
-            self.default_concept[NODE_ACTV_FUNC_NAME] = 'FUZZY'
-            self.default_concept[NODE_ACTV_FUNC_ARGS] = activation_dict
+            self._default_concept[NODE_ACTV_FUNC] = Activation.fuzzy_set
+            self._default_concept[NODE_ACTV_FUNC_NAME] = 'FUZZY'
+            self._default_concept[NODE_ACTV_FUNC_ARGS] = activation_dict
         elif activation_function is not None:
             actv_function = Activation.get_by_name(activation_function)
             if actv_function is not None:
-                self.default_concept[NODE_ACTV_FUNC] = actv_function
-                self.default_concept[NODE_ACTV_FUNC_NAME] = activation_function
-                self.default_concept[NODE_ACTV_FUNC_ARGS] = kwargs
+                self._default_concept[NODE_ACTV_FUNC] = actv_function
+                self._default_concept[NODE_ACTV_FUNC_NAME] = activation_function
+                self._default_concept[NODE_ACTV_FUNC_ARGS] = kwargs
             else:
                 raise Exception("Unknown ativation function: " + activation_function)
         else:
-            self.default_concept[NODE_ACTV_FUNC] = self.__map_activation_function
-            self.default_concept[NODE_ACTV_FUNC_NAME] = self.activation_function
-            self.default_concept[NODE_ACTV_FUNC_ARGS] = self.__global_func_args
+            self._default_concept[NODE_ACTV_FUNC] = self.__map_activation_function
+            self._default_concept[NODE_ACTV_FUNC_NAME] = self.activation_function
+            self._default_concept[NODE_ACTV_FUNC_ARGS] = self.__global_func_args
 
     def get_concept_value(self, concept_name: str):
         if concept_name in self.__topology:
