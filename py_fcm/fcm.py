@@ -454,6 +454,7 @@ class FuzzyCognitiveMap:
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self._default_concept[NODE_ACTV_FUNC_ARGS]
 
         self.__execution[concept_name] = [0.0]
+        self.__topology[concept_name][NODE_VALUE] = 0.0
 
     def set_concept_properties(self, concept_name: str, concept_type=None, is_active=None, use_memory=None,
                                exitation_function=None, activation_dict=None, activation_function=None, **kwargs):
