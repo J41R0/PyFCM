@@ -136,7 +136,7 @@ def from_json(str_json: str):
             if concept['type'] == 'DECISION':
                 concept_type = TYPE_DECISION
             my_fcm.add_concept(concept['id'],
-                               node_type=concept_type,
+                               concept_type=concept_type,
                                is_active=active,
                                use_memory=use_mem,
                                exitation_function=exitation,
@@ -361,13 +361,13 @@ class FuzzyCognitiveMap:
         self.__activation_function = function_name
         self.__map_activation_function = new_function
 
-    def add_concept(self, concept_name: str, node_type=None, is_active=None, use_memory=None,
+    def add_concept(self, concept_name: str, concept_type=None, is_active=None, use_memory=None,
                     exitation_function=None, activation_dict=None, activation_function=None, **kwargs):
         """
         Add new concept to map
         Args:
             concept_name: Concept name
-            node_type: Define type of node and behavior
+            concept_type: Define type of node and behavior
             is_active: Define if node is active or not
             use_memory: Use memory in activation node process
             exitation_function: Custom function name for execution process
@@ -409,14 +409,14 @@ class FuzzyCognitiveMap:
             self.__topology[concept_name][NODE_EXEC_FUNC] = self._default_concept[NODE_EXEC_FUNC]
             self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = self._default_concept[NODE_EXEC_FUNC_NAME]
 
-        if is_valid_type(node_type) and node_type is not None:
-            self.__topology[concept_name][NODE_TYPE] = node_type
+        if is_valid_type(concept_type) and concept_type is not None:
+            self.__topology[concept_name][NODE_TYPE] = concept_type
         else:
             self.__topology[concept_name][NODE_TYPE] = self._default_concept[NODE_TYPE]
 
         # scale and normalize the values for fuzzy function
         # activation_dict = {'membership':[],'val_list':[]}
-        if (node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR) and activation_dict is not None:
+        if (concept_type == TYPE_FUZZY or concept_type == TYPE_REGRESOR) and activation_dict is not None:
             self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
             self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = 'MEAN'
             self.__topology[concept_name][NODE_TRAIN_ACTIVATION] = activation_dict
