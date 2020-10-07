@@ -1,4 +1,4 @@
-# None activation, transmit input values to conections
+# None activation, transmit input values to connections
 FUNC_DIRECT = 0
 # Sigmoid-type function
 FUNC_SIGMOID = 1
@@ -32,14 +32,14 @@ NODE_EXEC_FUNC_NAME = "custom execution function name"
 NODE_ACTV_FUNC = "custom activation function"
 NODE_ACTV_FUNC_NAME = "custom activation function name"
 NODE_ACTV_FUNC_ARGS = "custom activation function arguments"
-NODE_TRAIN_ACTIVATION = "activation relation for continous values"
-NODE_TRAIN_MIN = "minimum continous value"
-NODE_TRAIN_FMAX = "minimum continous value + abs(NODE_TRAIN_MIN)"
+NODE_TRAIN_ACTIVATION = "activation relation for continuous values"
+NODE_TRAIN_MIN = "minimum continuous value"
+NODE_TRAIN_FMAX = "minimum continuous value + abs(NODE_TRAIN_MIN)"
 
 # node types
 TYPE_SIMPLE = "default node type"
 TYPE_DECISION = "node type for classification problems"
-TYPE_FUZZY = "node type for fuzzy treatment of continous values"
+TYPE_FUZZY = "node type for fuzzy treatment of continuous values"
 TYPE_REGRESOR = "node type for regression problems"
 TYPE_MUTI = "node type for multivalues fields"
 TYPE_MUTI_DESC = "node type for multivalues fields in decision nodes"
