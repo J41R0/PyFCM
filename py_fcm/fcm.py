@@ -323,7 +323,7 @@ class FuzzyCognitiveMap:
         # TODO: parametrize function per output feature
         # Function to compute decision or regresor nodes, last
         self.__map_decision_function = None
-        self.decision_function = ''
+        self.__decision_function = ''
         self.set_map_decision_function(decision_function)
         # memory influence flag
         self.flag_mem_influence = mem_influence
@@ -349,15 +349,15 @@ class FuzzyCognitiveMap:
         # Decision function definition
         new_function = Decision.get_by_name(function_name)
         if new_function is None:
-            raise Exception("Unknown decision function '" + function_name + "'")
-        self.decision_function = function_name
+            raise Exception("Unknown decision function '" + str(function_name) + "'")
+        self.__decision_function = function_name
         self.__map_decision_function = new_function
 
     def set_map_activation_function(self, function_name: str):
         # Activation function definition
         new_function = Activation.get_by_name(function_name)
         if new_function is None:
-            raise Exception("Unknown activation function '" + function_name + "'")
+            raise Exception("Unknown activation function '" + str(function_name) + "'")
         self.__activation_function = function_name
         self.__map_activation_function = new_function
 
@@ -796,7 +796,7 @@ class FuzzyCognitiveMap:
         """
         result = {
             'max_iter': self.max_iter,
-            'decision_function': self.decision_function,
+            'decision_function': self.__decision_function,
             'activation_function': self.__activation_function,
             'memory_influence': self.flag_mem_influence,
             'stability_diff': self.stability_diff,
@@ -812,7 +812,7 @@ class FuzzyCognitiveMap:
         for concept_name in self.__topology:
             # TODO: add all supported types
             type_name = 'SIMPLE'
-            if self.__topology[concept_name][NODE_ACTIVE] == TYPE_DECISION:
+            if self.__topology[concept_name][NODE_TYPE] == TYPE_DECISION:
                 type_name = 'DECISION'
             concept_desc = {
                 'id': concept_name,
