@@ -49,7 +49,7 @@ class FromJsonTests(unittest.TestCase):
                     },
                     {
                         "id": "concept_2", "is_active": True,
-                        "type": "SIMPLE", "activation": 0.0,
+                        "type": "DECISION", "activation": 0.0,
                         "custom_function": "sum_w",
                         "custom_function_args": {"weight": 0.3}
                     },
@@ -77,6 +77,7 @@ class FromJsonTests(unittest.TestCase):
             'activation_function_args': {'lambda_val': 1},
         }
         fcm_json = json.loads(self.fcm.to_json())
+        print(fcm_json)
         self.assertEqual(expected, fcm_json)
 
 
@@ -156,8 +157,8 @@ class JoinMapsTests(unittest.TestCase):
             "weight": 1,
             "concepts": [
                 {"id": "concept_1", "is_active": True, "type": "SIMPLE", "activation": 0.5},
-                {"id": "concept_2", "is_active": True, "type": "SIMPLE", 'activation': 0.0, "custom_function": "sum_w",
-                 "custom_function_args": {"weight": 0.3}},
+                {"id": "concept_2", "is_active": True, "type": "DECISION", 'activation': 0.0,
+                 "custom_function": "sum_w", "custom_function_args": {"weight": 0.3}},
                 {"id": "concept_4", "is_active": True, "type": "SIMPLE", "activation": 0.3,
                  "custom_function": "saturation"},
                 {"id": "concept_3", "is_active": True, "type": "SIMPLE", "activation": 0.0},
@@ -177,8 +178,8 @@ class JoinMapsTests(unittest.TestCase):
         expected = {
             "concepts": [
                 {'id': 'concept_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.5},
-                {'id': 'concept_2', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.0, 'custom_function': 'sum_w',
-                 'custom_function_args': {'weight': 0.3}}
+                {'id': 'concept_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.0,
+                 'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}
             ],
             "relations": [
                 {'origin': 'concept_1', 'destiny': 'concept_2', 'weight': 0.5}
@@ -197,8 +198,8 @@ class JoinMapsTests(unittest.TestCase):
         expected = {
             "concepts": [
                 {'id': 'concept_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.75},
-                {'id': 'concept_2', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.0, 'custom_function': 'sum_w',
-                 'custom_function_args': {'weight': 0.3}}
+                {'id': 'concept_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.0,
+                 'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}
             ],
             "relations": [
                 {'origin': 'concept_1', 'destiny': 'concept_2', 'weight': 0.75}
@@ -217,8 +218,8 @@ class JoinMapsTests(unittest.TestCase):
         expected = {
             "concepts": [
                 {'id': 'concept_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.25},
-                {'id': 'concept_2', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.0, 'custom_function': 'sum_w',
-                 'custom_function_args': {'weight': 0.3}}
+                {'id': 'concept_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.0,
+                 'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}
             ],
             "relations": [
                 {'origin': 'concept_1', 'destiny': 'concept_2', 'weight': 0.25}
