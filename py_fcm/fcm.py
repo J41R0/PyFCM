@@ -455,7 +455,7 @@ class FuzzyCognitiveMap:
 
         self.__execution[concept_name] = [0.0]
 
-    def set_concept_properties(self, concept_name: str, node_type=None, is_active=None, use_memory=None,
+    def set_concept_properties(self, concept_name: str, concept_type=None, is_active=None, use_memory=None,
                                exitation_function=None, activation_dict=None, activation_function=None, **kwargs):
         if concept_name in self.__topology:
             if is_active is not None and type(is_active) == bool:
@@ -467,15 +467,15 @@ class FuzzyCognitiveMap:
                     self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = exitation_function
                 else:
                     raise Exception("Unknown exitation function: " + exitation_function)
-            if node_type is not None:
-                if is_valid_type(node_type):
-                    self.__topology[concept_name][NODE_TYPE] = node_type
+            if concept_type is not None:
+                if is_valid_type(concept_type):
+                    self.__topology[concept_name][NODE_TYPE] = concept_type
                 else:
                     raise Exception("Unknown node type")
 
             # scale and normalize the values for fuzzy function
             # activation_dict = {'membership':[],'val_list':[]}
-            if (node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR) and activation_dict is not None:
+            if (concept_type == TYPE_FUZZY or concept_type == TYPE_REGRESOR) and activation_dict is not None:
                 self.__topology[concept_name][NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
                 self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = 'MEAN'
                 self.__topology[concept_name][NODE_TRAIN_ACTIVATION] = activation_dict
@@ -514,7 +514,7 @@ class FuzzyCognitiveMap:
         else:
             raise Exception("Concept " + concept_name + " not found")
 
-    def set_default_concept_properties(self, node_type=TYPE_SIMPLE, is_active=True, use_memory=None,
+    def set_default_concept_properties(self, concept_type=TYPE_SIMPLE, is_active=True, use_memory=None,
                                        exitation_function='KOSKO', activation_dict=None, activation_function=None,
                                        **kwargs):
         if is_active is not None and type(is_active) == bool:
@@ -526,12 +526,12 @@ class FuzzyCognitiveMap:
             self._default_concept[NODE_EXEC_FUNC_NAME] = exitation_function
         else:
             raise Exception("Unknown exitation function: " + exitation_function)
-        if is_valid_type(node_type):
-            self._default_concept[NODE_TYPE] = node_type
+        if is_valid_type(concept_type):
+            self._default_concept[NODE_TYPE] = concept_type
         else:
             raise Exception("Unknown node type")
 
-        if node_type == TYPE_FUZZY or node_type == TYPE_REGRESOR and activation_dict is not None:
+        if concept_type == TYPE_FUZZY or concept_type == TYPE_REGRESOR and activation_dict is not None:
             self._default_concept[NODE_EXEC_FUNC] = Excitation.get_by_name('MEAN')
             self._default_concept[NODE_EXEC_FUNC_NAME] = 'MEAN'
             self._default_concept[NODE_TRAIN_ACTIVATION] = activation_dict
