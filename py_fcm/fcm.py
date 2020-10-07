@@ -330,7 +330,7 @@ class FuzzyCognitiveMap:
         self.flag_mem_influence = mem_influence
         # Activation function definition
         self.__map_activation_function = None
-        self.activation_function = ''
+        self.__activation_function = ''
         self.set_map_activation_function(activ_function)
 
         # Set global function arguments
@@ -359,7 +359,7 @@ class FuzzyCognitiveMap:
         new_function = Activation.get_by_name(function_name)
         if new_function is None:
             raise Exception("Unknown activation function '" + function_name + "'")
-        self.activation_function = function_name
+        self.__activation_function = function_name
         self.__map_activation_function = new_function
 
     def add_concept(self, concept_name: str, node_type=None, is_active=None, use_memory=None,
@@ -498,7 +498,7 @@ class FuzzyCognitiveMap:
                     raise Exception("Unknown ativation function: " + activation_function)
             else:
                 self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
-                self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.activation_function
+                self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.__activation_function
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.__global_func_args
         else:
             raise Exception("Concept " + concept_name + " not found")
@@ -554,7 +554,7 @@ class FuzzyCognitiveMap:
                 raise Exception("Unknown ativation function: " + activation_function)
         else:
             self._default_concept[NODE_ACTV_FUNC] = self.__map_activation_function
-            self._default_concept[NODE_ACTV_FUNC_NAME] = self.activation_function
+            self._default_concept[NODE_ACTV_FUNC_NAME] = self.__activation_function
             self._default_concept[NODE_ACTV_FUNC_ARGS] = self.__global_func_args
 
     def get_concept_value(self, concept_name: str):
@@ -786,7 +786,7 @@ class FuzzyCognitiveMap:
         result = {
             'max_iter': self.max_iter,
             'decision_function': self.decision_function,
-            'activation_function': self.activation_function,
+            'activation_function': self.__activation_function,
             'memory_influence': self.flag_mem_influence,
             'stability_diff': self.stability_diff,
             'stop_at_stabilize': self.flag_stop_at_stabilize,
@@ -811,7 +811,7 @@ class FuzzyCognitiveMap:
             }
             if self.__topology[concept_name][NODE_USE_MEM] != self.flag_mem_influence:
                 concept_desc['use_memory'] = self.__topology[concept_name][NODE_USE_MEM]
-            if self.__topology[concept_name][NODE_ACTV_FUNC_NAME] != self.activation_function:
+            if self.__topology[concept_name][NODE_ACTV_FUNC_NAME] != self.__activation_function:
                 concept_desc['custom_function'] = self.__topology[concept_name][NODE_ACTV_FUNC_NAME]
                 if len(self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]) > 0:
                     concept_desc['custom_function_args'] = self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]
