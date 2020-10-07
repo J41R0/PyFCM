@@ -77,7 +77,6 @@ class FromJsonTests(unittest.TestCase):
             'activation_function_args': {'lambda_val': 1},
         }
         fcm_json = json.loads(self.fcm.to_json())
-        print(fcm_json)
         self.assertEqual(expected, fcm_json)
 
 
