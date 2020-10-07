@@ -292,7 +292,6 @@ class FuzzyCognitiveMap:
                 biestate: Dual estate function => {0,1}
                 threestate: Three  estate function => {0,0.5,1}
                 saturation: Values lower than 0 or highest than 1 are transformed => [0;1]
-                tan_hip: Hyperbolic tangent function => (0;1)
                 sigmoid: Sigmoid function => [0;1]
                 sigmoid_hip: Hyperbolic sigmoid function => [-1;1]
             mem_influence: Use or not memory influence in inference
@@ -775,18 +774,6 @@ class FuzzyCognitiveMap:
         nx.draw(graph)
         plt.savefig(path + fig_name + ".png")
         plt.close()
-
-    def get_topology_to_string(self):
-        """
-        Generate a string that describe current relations
-        Returns:
-
-        """
-        result = ""
-        for relation in self.__arc_list:
-            result += relation[RELATION_ORIGIN] + " -> (" + str(relation[RELATION_WEIGHT]) + ") -> " + relation[
-                RELATION_DESTINY] + "\n"
-        return result
 
     def to_json(self):
         """
