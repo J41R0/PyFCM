@@ -359,6 +359,11 @@ class FuzzyCognitiveMap:
             raise Exception("Unknown activation function '" + str(function_name) + "'")
         self.__activation_function = function_name
         self.__map_activation_function = new_function
+        for concept_name in self.__topology:
+            if self.__topology[concept_name][NODE_USE_MAP_FUNC]:
+                self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
+                self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.__activation_function
+                self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.__global_func_args
 
     def add_concept(self, concept_name: str, concept_type=None, is_active=None, use_memory=None,
                     exitation_function=None, activation_dict=None, activation_function=None, **kwargs):
@@ -435,6 +440,7 @@ class FuzzyCognitiveMap:
             self.__topology[concept_name][NODE_USE_MEM] = self._default_concept[NODE_USE_MEM]
 
         # define activation function
+        self.__topology[concept_name][NODE_USE_MAP_FUNC] = False
         if activation_dict is not None:
             self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
             self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'FUZZY'
@@ -451,6 +457,7 @@ class FuzzyCognitiveMap:
             self.__topology[concept_name][NODE_ACTV_FUNC] = self._default_concept[NODE_ACTV_FUNC]
             self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self._default_concept[NODE_ACTV_FUNC_NAME]
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self._default_concept[NODE_ACTV_FUNC_ARGS]
+            self.__topology[concept_name][NODE_USE_MAP_FUNC] = True
 
         self.__execution[concept_name] = [0.0]
         self.__topology[concept_name][NODE_VALUE] = 0.0
@@ -495,6 +502,7 @@ class FuzzyCognitiveMap:
                 self.__topology[concept_name][NODE_USE_MEM] = self.flag_mem_influence
 
             # define activation function
+            self.__topology[concept_name][NODE_USE_MAP_FUNC] = False
             if activation_dict is not None:
                 self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
                 self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'FUZZY'
@@ -511,6 +519,7 @@ class FuzzyCognitiveMap:
                 self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
                 self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.__activation_function
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = self.__global_func_args
+                self.__topology[concept_name][NODE_USE_MAP_FUNC] = True
         else:
             raise Exception("Concept " + concept_name + " not found")
 
@@ -551,6 +560,7 @@ class FuzzyCognitiveMap:
             self._default_concept[NODE_USE_MEM] = self.flag_mem_influence
 
         # define activation function
+        self._default_concept[NODE_USE_MAP_FUNC] = False
         if activation_dict is not None:
             self._default_concept[NODE_ACTV_FUNC] = Activation.fuzzy_set
             self._default_concept[NODE_ACTV_FUNC_NAME] = 'FUZZY'
@@ -567,6 +577,7 @@ class FuzzyCognitiveMap:
             self._default_concept[NODE_ACTV_FUNC] = self.__map_activation_function
             self._default_concept[NODE_ACTV_FUNC_NAME] = self.__activation_function
             self._default_concept[NODE_ACTV_FUNC_ARGS] = self.__global_func_args
+            self._default_concept[NODE_USE_MAP_FUNC] = True
 
     def get_concept_value(self, concept_name: str):
         if concept_name in self.__topology:
