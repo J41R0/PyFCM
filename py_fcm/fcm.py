@@ -655,7 +655,7 @@ class FuzzyCognitiveMap:
 
     def reset_execution(self):
         """
-        Restart map execution rerun inference
+        Restart map execution to rerun inference process
         Returns: None
 
         """
@@ -666,7 +666,7 @@ class FuzzyCognitiveMap:
 
     def clear_execution(self):
         """
-        Clear map execution for a new inference
+        Clear map execution and inital concepts values for a new inference process
         Returns: None
 
         """
