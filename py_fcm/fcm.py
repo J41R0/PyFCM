@@ -669,8 +669,8 @@ class FuzzyCognitiveMap:
         """
         for node, data in self.__topology.items():
             data[NODE_AUX] = []
-            data[NODE_VALUE] = 0
-            self.__execution[node] = [0]
+            data[NODE_VALUE] = 0.0
+            self.__execution[node] = [0.0]
 
     def run_inference(self, reset=True):
         """

@@ -233,7 +233,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         self.__init_complex_fcm()
         self.fcm.run_inference()
         self.fcm.clear_execution()
-        expected_result = {'input_1': 0}
+        expected_result = {'input_1': 0.0}
         self.assertEqual(expected_result, self.fcm.get_final_state(names=['input_1']))
 
     def test_inference_sigmoid(self):
