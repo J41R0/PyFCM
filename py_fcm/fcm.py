@@ -614,7 +614,7 @@ class FuzzyCognitiveMap:
         self.__arc_list = []
         self.__execution = {}
 
-    def init_concept(self, concept_name: str, value: float, required_presence=True, add_concept=True):
+    def init_concept(self, concept_name: str, value: float, required_presence=True):
         """
 
         Set concept initial value, by default 1
@@ -622,14 +622,11 @@ class FuzzyCognitiveMap:
             concept_name: Concept name
             value: Feature value
             required_presence: Is required the concept presence
-            add_concept: If concept not in map use default concept values to create a new one
         Returns: None
 
         """
         if concept_name not in self.__topology:
-            if add_concept:
-                self.add_concept(concept_name)
-            elif required_presence:
+            if required_presence:
                 raise Exception("Missing concept " + concept_name)
             else:
                 return
