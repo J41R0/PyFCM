@@ -712,50 +712,33 @@ class FuzzyCognitiveMap:
         for node in self.__topology:
             self.__topology[node][NODE_VALUE] = self.__map_decision_function(self.__execution[node])
 
-    def search_concept_final_state(self, concept=None):
-        """
-        Get inference result values by node id
-        Args:
-            concept: single id or id list, each id could be a sub str from stored id
-
-        Returns:
-
-        """
-        result = {}
-        if type(concept) == list:
-            for concept, exec_values in self.__execution.items():
-                if concept in concept:
-                    result[concept] = self.__map_decision_function(exec_values)
-        elif concept is None:
-            for concept, exec_values in self.__execution.items():
-                result[concept] = self.__map_decision_function(exec_values)
-        else:
-            for concept, exec_values in self.__execution.items():
-                if concept in concept:
-                    result[concept] = self.__map_decision_function(exec_values)
-        return result
-
-    def get_final_state(self, nodes_type="target"):
+    def get_final_state(self, concepts_type="target", names=[]):
         """
         Get inference result values of node_type or all nodes
         Args:
-            nodes_type: Type of nodes inference result
+            concepts_type: Type of nodes inference result
                 "any": calc all nodes final state
                 "target": calc only DECISION or REGRESSION node types final state
+            names: concept name list
 
         Returns: Dict in way: {"<node_id>": <final_value>}
 
         """
         result = {}
-        for concept_id in self.__execution.keys():
-            if nodes_type == "any":
-                result[concept_id] = self.__map_decision_function(self.__execution[concept_id])
-            if nodes_type == "target":
-                if (self.__topology[concept_id][NODE_TYPE] == TYPE_DECISION
-                        or self.__topology[concept_id][NODE_TYPE] == TYPE_REGRESOR):
+        if len(names) > 0:
+            for concept, exec_values in self.__execution.items():
+                if concept in names:
+                    result[concept] = self.__map_decision_function(exec_values)
+        else:
+            for concept_id in self.__execution.keys():
+                if concepts_type == "any":
                     result[concept_id] = self.__map_decision_function(self.__execution[concept_id])
-            elif self.__topology[concept_id][NODE_TYPE] == nodes_type:
-                result[concept_id] = self.__map_decision_function(self.__execution[concept_id])
+                if concepts_type == "target":
+                    if (self.__topology[concept_id][NODE_TYPE] == TYPE_DECISION
+                            or self.__topology[concept_id][NODE_TYPE] == TYPE_REGRESOR):
+                        result[concept_id] = self.__map_decision_function(self.__execution[concept_id])
+                elif self.__topology[concept_id][NODE_TYPE] == concepts_type:
+                    result[concept_id] = self.__map_decision_function(self.__execution[concept_id])
         return result
 
     def plot_execution(self, fig_name="map", limit=0, plot_all=False, path=""):
