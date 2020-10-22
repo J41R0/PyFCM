@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 
 from tests import create_concept
 from py_fcm.__const import *
@@ -6,14 +7,6 @@ from py_fcm.functions import Relation
 
 
 class ExitationFunctionsTests(unittest.TestCase):
-    def test_mean(self):
-        test_concept = create_concept("test", exitation_function='MEAN')
-        res = test_concept[NODE_EXEC_FUNC](test_concept)
-        self.assertEqual(1, res)
-        test_concept = create_concept("test", exitation_function='MEAN', use_memory=False)
-        res = test_concept[NODE_EXEC_FUNC](test_concept)
-        self.assertEqual(1, res)
-
     def test_kosko(self):
         test_concept = create_concept("test", exitation_function='KOSKO')
         res = test_concept[NODE_EXEC_FUNC](test_concept)
@@ -33,14 +26,14 @@ class ExitationFunctionsTests(unittest.TestCase):
 
 class ActivationFunctionsTests(unittest.TestCase):
     def test_biestate(self):
-        test_concept = create_concept("test", activ_function='biestate')
+        test_concept = create_concept(activ_function='biestate')
         res = test_concept[NODE_ACTV_FUNC](0.5)
         self.assertEqual(1.0, res)
         res = test_concept[NODE_ACTV_FUNC](-0.5)
         self.assertEqual(0.0, res)
 
     def test_threestate(self):
-        test_concept = create_concept("test", activ_function='threestate')
+        test_concept = create_concept(activ_function='threestate')
         res = test_concept[NODE_ACTV_FUNC](0.30)
         self.assertEqual(0.0, res)
         res = test_concept[NODE_ACTV_FUNC](0.60)
@@ -49,21 +42,23 @@ class ActivationFunctionsTests(unittest.TestCase):
         self.assertEqual(1.0, res)
 
     def test_saturation(self):
-        test_concept = create_concept("test", activ_function='saturation')
+        test_concept = create_concept(activ_function='saturation')
         res = test_concept[NODE_ACTV_FUNC](-60)
         self.assertEqual(0.0, res)
         res = test_concept[NODE_ACTV_FUNC](75)
         self.assertEqual(1.0, res)
 
     def test_sigmoid(self):
-        test_concept = create_concept("test", activ_function='sigmoid')
+        test_concept = create_concept(activ_function='sigmoid')
         res = test_concept[NODE_ACTV_FUNC](1)
         self.assertEqual(0.7310585786300049, res)
         res = test_concept[NODE_ACTV_FUNC](-1)
         self.assertEqual(0.2689414213699951, res)
+        res = test_concept[NODE_ACTV_FUNC](-1, 50)
+        self.assertEqual(1.928749847963918e-22, res)
 
     def test_sigmoid_and_tan_hip(self):
-        test_concept = create_concept("test", activ_function='sigmoid_hip')
+        test_concept = create_concept(activ_function='sigmoid_hip')
         res = test_concept[NODE_ACTV_FUNC](1)
         self.assertEqual(0.7615941559557649, res)
         res = test_concept[NODE_ACTV_FUNC](-1)
@@ -75,7 +70,7 @@ class ActivationFunctionsTests(unittest.TestCase):
         self.assertEqual(-0.7615941559557649, res)
 
     def test_sum_w(self):
-        test_concept = create_concept("test", activ_function='sum_w')
+        test_concept = create_concept(activ_function='sum_w')
         res = test_concept[NODE_ACTV_FUNC](0.7, 0.5)
         self.assertEqual(0.7, res)
         res = test_concept[NODE_ACTV_FUNC](7, 0.5)
@@ -87,16 +82,18 @@ class ActivationFunctionsTests(unittest.TestCase):
         res = test_concept[NODE_ACTV_FUNC](-2, -3.5)
         self.assertEqual(-1.0, res)
 
-    def test_proportion(self):
-        test_concept = create_concept("test", activ_function='proportion')
-        res = test_concept[NODE_ACTV_FUNC](7, 0.5)
+    def test_fuzzy(self):
+        test_concept = create_concept(activ_function='fuzzy')
+        res = test_concept[NODE_ACTV_FUNC](10, np.array([0.0, 1.0]), np.array([5, 15]))
+        self.assertEqual(0.5, res)
+        res = test_concept[NODE_ACTV_FUNC](4, np.array([0.0, 1.0]), np.array([5, 15]))
+        self.assertEqual(0.0, res)
+        res = test_concept[NODE_ACTV_FUNC](16, np.array([0.0, 1.0]), np.array([5, 15]))
         self.assertEqual(1, res)
-        res = test_concept[NODE_ACTV_FUNC](-7, 0.5)
-        self.assertEqual(-1, res)
-        res = test_concept[NODE_ACTV_FUNC](-7, 5, 0.1)
-        self.assertEqual(-0.14, res)
-        res = test_concept[NODE_ACTV_FUNC](7, 5, 0.1)
-        self.assertEqual(0.14, res)
+        res = test_concept[NODE_ACTV_FUNC](7, np.array([0.0, 0.5, 1.0]), np.array([5, 15, 20]))
+        self.assertEqual(0.09999999999999998, res)
+        res = test_concept[NODE_ACTV_FUNC](16, np.array([0.0, 0.5, 1.0]), np.array([5, 15, 20]))
+        self.assertEqual(0.6, res)
 
 
 class RelationFunctionsTests(unittest.TestCase):
