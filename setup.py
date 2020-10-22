@@ -18,6 +18,8 @@ setuptools.setup(
         'pandas >= 0.24.2',
         'matplotlib >= 3.1.0',
         'networkx >= 2.3',
+        'numpy >= 1.19.1',
+        'numba >= 0.51.2',
     ],
     python_requires='>=3.6',
     classifiers=[
