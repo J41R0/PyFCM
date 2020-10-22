@@ -1,5 +1,9 @@
 import math
 from math import exp
+
+import numpy as np
+from numba import njit
+
 from py_fcm.__const import *
 
 
@@ -35,17 +39,6 @@ class Excitation:
         return res
 
     @staticmethod
-    def mean(node):
-        total = len(node[NODE_AUX])
-        res = sum(node[NODE_AUX])
-        if node[NODE_USE_MEM]:
-            res += node[NODE_VALUE]
-            total += 1
-        if total == 0:
-            return 0
-        return res / total
-
-    @staticmethod
     def get_by_name(func_name: str):
         """
         Get the function callable object from the function name
@@ -59,8 +52,6 @@ class Excitation:
             return Excitation.kosko
         if func_name == "PAPAGEORGIUS":
             return Excitation.papageorgius
-        if func_name == "MEAN":
-            return Excitation.mean
         return None
 
     @staticmethod
@@ -77,128 +68,161 @@ class Excitation:
         return names
 
 
-class Activation:
-    @staticmethod
-    def sigmoid(val, lambda_val=1):
-        return 1.0 / (1.0 + exp(-1 * lambda_val * val))
+# activation functions relations
 
-    @staticmethod
-    def sigmoid_lambda(x, y):
-        res = -(math.log((1 / y) - 1) / x)
-        return res
+@njit
+def sigmoid(val: float, lambda_val=1.0) -> float:
+    return 1.0 / (1.0 + exp(-1 * lambda_val * val))
 
-    @staticmethod
-    def sigmoid_hip(val, lambda_val=2):
-        # avoiding estimation errors
-        if (-1 * lambda_val * val) > 500:
-            return (1.0 - exp(500)) / (1.0 + exp(500))
-        else:
-            return (1.0 - exp(-1 * lambda_val * val)) / (1.0 + exp(-1 * lambda_val * val))
 
-    @staticmethod
-    def sigmoid_hip_lambda(x, y):
-        res = -(math.log((1 - y) / (1 + y)) / x)
-        return res
+@njit
+def sigmoid_lambda(x: float, y: float) -> float:
+    res = -(math.log((1 / y) - 1) / x)
+    return res
 
-    @staticmethod
-    def saturation(val):
-        if val < 0:
-            return 0.0
-        elif val > 1:
-            return 1.0
-        else:
-            return val
 
-    @staticmethod
-    def bistate(val):
-        if val <= 0.0:
-            return 0.0
+@njit
+def sigmoid_hip(val: float, lambda_val=2.0) -> float:
+    # avoiding estimation errors
+    if (-1 * lambda_val * val) > 500:
+        return (1.0 - exp(500)) / (1.0 + exp(500))
+    else:
+        return (1.0 - exp(-1 * lambda_val * val)) / (1.0 + exp(-1 * lambda_val * val))
+
+
+@njit
+def sigmoid_hip_lambda(x: float, y: float) -> float:
+    res = -(math.log((1 - y) / (1 + y)) / x)
+    return res
+
+
+@njit
+def saturation(val: float) -> float:
+    if val < 0:
+        return 0.0
+    elif val > 1:
         return 1.0
+    else:
+        return val
 
-    @staticmethod
-    def tristate(val):
-        if val <= 1.0 / 3.0:
-            return 0.0
-        elif val <= 2.0 / 3.0:
-            return 0.5
-        return 1.0
 
-    @staticmethod
-    def sum_w(val, weight):
-        if val >= weight:
-            if val > 1:
-                return 1
-            if val < -1:
-                return -1
-            return val
-        return 0
+@njit
+def bistate(val: float) -> float:
+    if val <= 0.0:
+        return 0.0
+    return 1.0
 
-    @staticmethod
-    def proportion(val, max_val, max_prop=1):
-        prop = (max_prop * val) / max_val
-        if prop > 1:
+
+@njit
+def threestate(val: float) -> float:
+    if val <= 1.0 / 3.0:
+        return 0.0
+    elif val <= 2.0 / 3.0:
+        return 0.5
+    return 1.0
+
+
+@njit
+def sum_w(val: float, weight: float) -> float:
+    if val >= weight:
+        if val > 1:
             return 1
-        if prop < -1:
+        if val < -1:
             return -1
-        return prop
+        return val
+    return 0
+
+
+@njit
+def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
+              val_list=np.empty(1, dtype=np.float64)) -> float:
+    # is assumed that the list of values (val_list) is sorted from lowest to gratest
+    # minimum value
+    if value <= val_list.min():
+        return membership.min()
+    # maximum value
+    if value >= val_list.max():
+        return membership.max()
+
+    # result positions
+    prev_pos = 0
+    next_pos = 0
+
+    # find nearest values index
+    index = (np.abs(val_list - value)).argmin()
+    if val_list[index] == value:
+        return membership[index]
+    if index == 0:
+        next_pos = 1
+    elif index == val_list.size - 1:
+        prev_pos = index - 1
+        next_pos = index
+    else:
+        if (value - val_list[index]) > 0:
+            prev_pos = index
+            next_pos = index + 1
+        else:
+            prev_pos = index - 1
+            next_pos = index
+
+    sign = 1.0
+    if value != 0:
+        sign = value / abs(value)
+    value = abs(value)
+
+    # f(Xi) = (f(Xi-1)*Xi/Xi-1)*Xi-1_Xi_coef + (f(Xi+1)*Xi/Xi+1)*Xi+1_Xi_coef
+    # inf_estimation = (membership[prev_pos] * value) / float(val_list[prev_pos])
+    # sup_estimation = (membership[next_pos] * value) / float(val_list[next_pos])
+    inf_estimation = membership[prev_pos]
+    sup_estimation = membership[next_pos]
+    diff = val_list[next_pos] - val_list[prev_pos]
+    # calc influence coefficents
+    inf_coef = 1 - ((value - val_list[prev_pos]) / diff)
+    # 1 - inf_coef
+    sup_coef = 1 - ((val_list[next_pos] - value) / diff)
+    # result estimation according to distance between extremes
+
+    estimation = sign * ((inf_coef * inf_estimation) + (sup_coef * sup_estimation))
+    if estimation > 1:
+        estimation = 1
+    if estimation < -1:
+        estimation = -1
+    return estimation
+
+
+@njit
+def exec_actv_function(function_id: int, val: float, args=np.array([1.0])) -> float:
+    if function_id == FUNC_SATURATION:
+        return saturation(val)
+    if function_id == FUNC_BISTATE:
+        return bistate(val)
+    if function_id == FUNC_THREESTATE:
+        return threestate(val)
+    if function_id == FUNC_SUM_W:
+        return sum_w(val, weight=args[0])
+    if function_id == FUNC_SIGMOID:
+        return sigmoid(val, lambda_val=args[0])
+    if function_id == FUNC_SIGMOID_HIP:
+        return sigmoid_hip(val, lambda_val=args[0])
+    if function_id == FUNC_FUZZY:
+        membership = args[:int(args.size / 2)]
+        val_list = args[int(args.size / 2):]
+        return fuzzy_set(val, membership, val_list)
+
+
+class Activation:
+    """
+    Class to map all activation functions that can be used by FCM concepts. The function args structure will be the
+     next one: val, arg_list
+         Where:
+           val: is the value to apply the function
+           arg_list: is a numpy array that contains the list of arguments values sorted
+    Note: If some function require more than one argument will be assumed that the values will be sorted according to
+     the alphabetical sort of arguments names
+    """
 
     @staticmethod
-    def fuzzy_set(value, membership=[], val_list=[]):
-        sign = 1.0
-        if value != 0:
-            sign = value / abs(value)
-        value = abs(value)
-        # cmp values
-        prev_value = 1
-        next_value = -1
-
-        # result positions
-        prev_pos = 0
-        next_pos = 0
-
-        # calc result
-        for elem_pos in range(0, len(val_list)):
-            if value == val_list[elem_pos]:
-                return membership[elem_pos]
-
-            diff = float(value) - float(val_list[elem_pos])
-            if diff > 0:
-                if diff < prev_value:
-                    prev_value = diff
-                    prev_pos = elem_pos
-            else:
-                if diff > next_value:
-                    next_value = diff
-                    next_pos = elem_pos
-        # minimum value
-        if prev_value == 1:
-            return min(membership)
-        # maximum value
-        if next_value == -1:
-            return max(membership)
-        # f(Xi) = (f(Xi-1)*Xi/Xi-1)*Xi-1_Xi_coef + (f(Xi+1)*Xi/Xi+1)*Xi+1_Xi_coef
-        # inf_estimation = (membership[prev_pos] * value) / float(val_list[prev_pos])
-        # sup_estimation = (membership[next_pos] * value) / float(val_list[next_pos])
-        inf_estimation = membership[prev_pos]
-        sup_estimation = membership[next_pos]
-        diff = float(val_list[next_pos]) - float(val_list[prev_pos])
-        if diff == 0:
-            return membership[next_pos]
-        # calc influence coefficents
-        inf_coef = 1 - ((value - float(val_list[prev_pos])) / diff)
-        # 1 - inf_coef
-        sup_coef = 1 - ((float(val_list[next_pos]) - value) / diff)
-        # result estimation according to distance between extremes
-
-        estimation = sign * ((inf_coef * inf_estimation) + (sup_coef * sup_estimation))
-        if estimation > 1:
-            estimation = 1
-        if estimation < -1:
-            estimation = -1
-        return estimation
-
-    @staticmethod
-    def get_by_name(func_name: str):
+    def get_function_by_name(func_name: str):
         """
         Get the function callable object from the function name
         Args:
@@ -208,21 +232,49 @@ class Activation:
 
         """
         if func_name == "biestate":
-            return Activation.bistate
+            return bistate
         if func_name == "threestate":
-            return Activation.tristate
+            return threestate
         if func_name == "saturation":
-            return Activation.saturation
+            return saturation
         if func_name == "tan_hip":
-            return Activation.sigmoid_hip
+            return sigmoid_hip
         if func_name == "sigmoid":
-            return Activation.sigmoid
+            return sigmoid
         if func_name == "sigmoid_hip":
-            return Activation.sigmoid_hip
+            return sigmoid_hip
         if func_name == "sum_w":
-            return Activation.sum_w
-        if func_name == "proportion":
-            return Activation.proportion
+            return sum_w
+        if func_name == "fuzzy":
+            return fuzzy_set
+        return None
+
+    @staticmethod
+    def get_const_by_name(func_name: str):
+        """
+        Get the function const value from the function name
+        Args:
+            func_name: Activation function name
+
+        Returns: Function cont value if func_name is found, None otherwise
+
+        """
+        if func_name == "biestate":
+            return FUNC_BISTATE
+        if func_name == "threestate":
+            return FUNC_THREESTATE
+        if func_name == "saturation":
+            return FUNC_SATURATION
+        if func_name == "tan_hip":
+            return FUNC_SIGMOID_HIP
+        if func_name == "sigmoid":
+            return FUNC_SIGMOID
+        if func_name == "sigmoid_hip":
+            return FUNC_SIGMOID_HIP
+        if func_name == "sum_w":
+            return FUNC_SUM_W
+        if func_name == "fuzzy":
+            return FUNC_FUZZY
         return None
 
     @staticmethod
@@ -242,6 +294,19 @@ class Activation:
         names.add("sum_w")
         names.add("proportion")
         return names
+
+
+# ensure activation functions numba compilation
+sigmoid(10, 1.5)
+sigmoid_lambda(500, 0.8)
+sigmoid_hip(10)
+sigmoid_hip_lambda(500, 0.85)
+bistate(10)
+threestate(10)
+saturation(10)
+sum_w(10, 0.5)
+fuzzy_set(10, np.array([0.0, 1.0]), np.array([5, 15]))
+exec_actv_function(2, 10, np.array([2.0]))
 
 
 class Decision:
