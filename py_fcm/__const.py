@@ -1,19 +1,17 @@
-# None activation, transmit input values to connections
-FUNC_DIRECT = 0
-# Sigmoid-type function
-FUNC_SIGMOID = 1
 # Saturation-type function
-FUNC_SATURATION = 2
-# Tristate-type function
-FUNC_TRISTATE = 3
+FUNC_SATURATION = 0
 # Bistate-type function
-FUNC_BISTATE = 4
-# Fuzzy-type function
-FUNC_FUZZY = 5
+FUNC_BISTATE = 1
+# Tristate-type function
+FUNC_THREESTATE = 2
+# Sigmoid-type function
+FUNC_SIGMOID = 3
+# Sigmoid Hyperbolic / Tangent Hyperbolic -type function
+FUNC_SIGMOID_HIP = 4
 # Pulse-type function
-FUNC_PULSE = 6
-# Stable mean behavior
-FUNC_MEAN_GAP = 7
+FUNC_SUM_W = 5
+# Fuzzy-type function
+FUNC_FUZZY = 6
 
 # relations const
 RELATION_DESTINY = 0
@@ -33,9 +31,10 @@ NODE_EXEC_FUNC_NAME = "custom execution function name"
 NODE_ACTV_FUNC = "custom activation function"
 NODE_ACTV_FUNC_NAME = "custom activation function name"
 NODE_ACTV_FUNC_ARGS = "custom activation function arguments"
-NODE_TRAIN_ACTIVATION = "activation relation for continuous values"
-NODE_TRAIN_MIN = "minimum continuous value"
-NODE_TRAIN_FMAX = "minimum continuous value + abs(NODE_TRAIN_MIN)"
+NODE_ACTV_FUNC_ARGS_VECT = "custom activation function arguments in vector"
+NODE_FUZZY_ACTIVATION = "activation relation for continuous values"
+NODE_FUZZY_MIN = "minimum continuous value"
+NODE_FUZZY_MAX = "maximum continuous value"
 
 # node types
 TYPE_SIMPLE = "default node type"
