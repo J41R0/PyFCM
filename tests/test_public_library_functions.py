@@ -172,6 +172,28 @@ class JoinMapsTests(unittest.TestCase):
         fcm_json = json.loads(fcm.to_json())
         self.assertEqual(expected, fcm_json)
 
+    def test_inference_after_join(self):
+        fcm = join_maps([self.fcm1, self.fcm2, self.fcm3])
+        fcm.run_inference()
+        expected = {"max_iter": 500, "decision_function": "LAST", "activation_function": "sigmoid",
+                    "memory_influence": False,
+                    "stability_diff": 0.001, "stop_at_stabilize": True, "extra_steps": 5, "weight": 1,
+                    "concepts": [
+                        {"id": "concept_1", "is_active": True, "type": "SIMPLE", "activation": 0.5},
+                        {"id": "concept_2", "is_active": True, "type": "DECISION", "activation": 0.0,
+                         "custom_function": "sum_w", "custom_function_args": {"weight": 0.3}},
+                        {"id": "concept_4", "is_active": True, "type": "SIMPLE", "activation": 0.0,
+                         "custom_function": "saturation"},
+                        {"id": "concept_3", "is_active": True, "type": "SIMPLE", "activation": 0.5}
+                    ],
+                    "relations": [
+                        {"origin": "concept_1", "destiny": "concept_2", "weight": 0.5},
+                        {"origin": "concept_4", "destiny": "concept_2", "weight": 0.2},
+                        {"origin": "concept_2", "destiny": "concept_3", "weight": 0.8911}
+                    ]}
+        fcm_json = json.loads(fcm.to_json())
+        self.assertEqual(expected, fcm_json)
+
     def test_intersection(self):
         fcm = join_maps([self.fcm1, self.fcm2, self.fcm3], concept_strategy='intersection')
         expected = {
