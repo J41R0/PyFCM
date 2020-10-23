@@ -64,6 +64,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
             "max_iter": 200,
             "decision_function": "LAST",
             "activation_function": "sigmoid",
+            'activation_function_args': {'lambda_val': 10},
             "memory_influence": False,
             "stability_diff": 0.001,
             "stop_at_stabilize": True,
@@ -73,7 +74,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
             "relations": []
         }
         self.fcm.set_map_decision_function('LAST')
-        self.fcm.set_map_activation_function('sigmoid')
+        self.fcm.set_map_activation_function('sigmoid', lambda_val=10)
         json_fcm = json.loads(self.fcm.to_json())
         self.assertEqual(expected_json, json_fcm)
 
@@ -300,6 +301,52 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
 
         self.__init_complex_fcm()
         self.fcm.set_map_activation_function('saturation')
+        self.fcm.run_inference()
+        json_fcm = json.loads(self.fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+
+    def test_inference_sum_w(self):
+        expected_json = {
+            'concepts': [{'id': 'result_1', 'is_active': True, 'type': 'DECISION', 'activation': 0.05454545454545454},
+                         {'id': 'result_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.0},
+                         {'id': 'input_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.045454545454545456},
+                         {'id': 'input_2', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.031818181818181815},
+                         {'id': 'input_3', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.11818181818181818},
+                         {'id': 'input_4', 'is_active': True, 'type': 'SIMPLE', 'activation': -0.018181818181818184},
+                         {'id': 'input_5', 'is_active': True, 'type': 'SIMPLE', 'activation': -0.045454545454545456}]
+        }
+
+        self.__init_complex_fcm()
+        self.fcm.set_map_activation_function('sum_w', weight=0.0001)
+        self.fcm.run_inference()
+        json_fcm = json.loads(self.fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+
+    def test_inference_several_functions(self):
+        expected_json = {
+            'concepts': [
+                {'id': 'result_1', 'is_active': True, 'type': 'DECISION', 'activation': 0.0, 'use_memory': True,
+                 'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.003}},
+                {'id': 'result_2', 'is_active': True, 'type': 'DECISION', 'activation': 3.2403550475677466e-05,
+                 'use_memory': True, 'custom_function': 'sigmoid', 'custom_function_args': {'lambda_val': 10}},
+                {'id': 'input_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.06555555555555555,
+                 'use_memory': True, 'custom_function': 'threestate'},
+                {'id': 'input_2', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.038765003735924224},
+                {'id': 'input_3', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.11811554216872916},
+                {'id': 'input_4', 'is_active': True, 'type': 'SIMPLE', 'activation': -0.0416860513886225},
+                {'id': 'input_5', 'is_active': True, 'type': 'SIMPLE', 'activation': -0.05555555555555555}]
+        }
+
+        self.__init_complex_fcm()
+        self.fcm.add_concept('result_1', concept_type=TYPE_DECISION, use_memory=True,
+                             exitation_function='PAPAGEORGIUS', activation_function='sum_w', weight=0.003)
+
+        self.fcm.add_concept('result_2', concept_type=TYPE_DECISION, use_memory=True,
+                             exitation_function='PAPAGEORGIUS', activation_function='sigmoid', lambda_val=10)
+
+        self.fcm.add_concept('input_1', use_memory=True, exitation_function='PAPAGEORGIUS',
+                             activation_function='threestate')
+        self.fcm.init_concept('input_1', 0.59)
         self.fcm.run_inference()
         json_fcm = json.loads(self.fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
