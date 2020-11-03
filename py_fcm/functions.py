@@ -2,6 +2,7 @@ import math
 from math import exp
 
 import numpy as np
+from numba.typed import List
 from numba import njit
 
 from py_fcm.__const import *
@@ -123,7 +124,7 @@ def threestate(val: float) -> float:
 
 
 @njit
-def sum_w(val: float, weight: float) -> float:
+def sum_w(val: float, weight=-1.0) -> float:
     if val >= weight:
         if val > 1:
             return 1
@@ -191,7 +192,7 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
 
 
 @njit
-def exec_actv_function(function_id: int, val: float, args=np.array([1.0])) -> float:
+def exec_actv_function(function_id: int, val: float, args=np.empty(1, dtype=np.float64)) -> float:
     if function_id == FUNC_SATURATION:
         return saturation(val)
     if function_id == FUNC_BISTATE:
@@ -199,15 +200,77 @@ def exec_actv_function(function_id: int, val: float, args=np.array([1.0])) -> fl
     if function_id == FUNC_THREESTATE:
         return threestate(val)
     if function_id == FUNC_SUM_W:
-        return sum_w(val, weight=args[0])
+        if args.size == 0:
+            return sum_w(val)
+        else:
+            return sum_w(val, weight=args[0])
     if function_id == FUNC_SIGMOID:
-        return sigmoid(val, lambda_val=args[0])
+        if args.size == 0:
+            return sigmoid(val)
+        else:
+            return sigmoid(val, lambda_val=args[0])
     if function_id == FUNC_SIGMOID_HIP:
-        return sigmoid_hip(val, lambda_val=args[0])
+        if args.size == 0:
+            return sigmoid_hip(val)
+        else:
+            return sigmoid_hip(val, lambda_val=args[0])
     if function_id == FUNC_FUZZY:
         membership = args[:int(args.size / 2)]
         val_list = args[int(args.size / 2):]
         return fuzzy_set(val, membership, val_list)
+
+
+@njit
+def vectorized_run(state_vector: np.ndarray, relation_matrix: np.ndarray, functions: np.ndarray, func_args: List,
+                   memory_usage: List, avoid_saturation: List, max_iterations: int, min_diff: float,
+                   extra_steps: int):
+    output = np.full((state_vector.size, max_iterations), 2.0)
+    keep_execution = True
+    extra_steps_counter = extra_steps
+    it_counter = max_iterations
+
+    for val_pos in range(state_vector.size):
+        output[val_pos][0] = state_vector[val_pos]
+        if avoid_saturation[val_pos]:
+            state_vector[val_pos] = (2 * state_vector[val_pos]) - 1
+
+    current_step = 1
+    difference = min_diff
+    while keep_execution:
+        it_counter = it_counter - 1
+        if it_counter <= 0:
+            keep_execution = False
+        new_state = np.dot(state_vector, relation_matrix)
+        for val_pos in range(state_vector.size):
+            if memory_usage[val_pos]:
+                new_state[val_pos] = new_state[val_pos] + state_vector[val_pos]
+
+            new_state[val_pos] = exec_actv_function(functions[val_pos], new_state[val_pos], func_args[val_pos])
+            output[val_pos][current_step] = new_state[val_pos]
+
+            if avoid_saturation[val_pos]:
+                new_state[val_pos] = 2 * new_state[val_pos] - 1
+
+        state_vector = new_state
+        current_step = current_step + 1
+
+        if current_step > 1:
+            difference = abs(np.sum(output[:, current_step - 1]) - np.sum(output[:, current_step - 2]))
+        if difference < min_diff:
+            extra_steps_counter = extra_steps_counter - 1
+            if extra_steps_counter == 0:
+                keep_execution = False
+        else:
+            extra_steps_counter = extra_steps
+    return output
+
+
+# ensure  vectorized_run compilation
+__empt_arr = np.ones(2, np.float64)
+__empt_mat = np.ones((2, 2), np.float64)
+vectorized_run(__empt_arr, __empt_mat, __empt_arr, List([__empt_arr, __empt_arr]),
+               List([True, False]), List([True, False]),
+               max_iterations=3, min_diff=0.0001, extra_steps=0)
 
 
 class Activation:
