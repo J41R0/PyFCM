@@ -82,6 +82,19 @@ class ActivationFunctionsTests(unittest.TestCase):
         res = test_concept[NODE_ACTV_FUNC](-2, -3.5)
         self.assertEqual(-1.0, res)
 
+    def test_lceq(self):
+        test_concept = create_concept(activ_function='lceq')
+        res = test_concept[NODE_ACTV_FUNC](0.7, 0.5)
+        self.assertEqual(0.0, res)
+        res = test_concept[NODE_ACTV_FUNC](7, 0.5)
+        self.assertEqual(0.0, res)
+        res = test_concept[NODE_ACTV_FUNC](0.3, 0.5)
+        self.assertEqual(0.3, res)
+        res = test_concept[NODE_ACTV_FUNC](-7, -3.5)
+        self.assertEqual(-1.0, res)
+        res = test_concept[NODE_ACTV_FUNC](-2, -3.5)
+        self.assertEqual(0.0, res)
+
     def test_fuzzy(self):
         test_concept = create_concept(activ_function='fuzzy')
         res = test_concept[NODE_ACTV_FUNC](10, np.array([0.0, 1.0]), np.array([5, 15]))

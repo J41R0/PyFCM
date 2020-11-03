@@ -135,6 +135,17 @@ def greater_cond_equality(val: float, weight=-1.0) -> float:
 
 
 @njit
+def lower_cond_equality(val: float, weight=1.0) -> float:
+    if val <= weight:
+        if val > 1:
+            return 1
+        if val < -1:
+            return -1
+        return val
+    return 0
+
+
+@njit
 def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
               val_list=np.empty(1, dtype=np.float64)) -> float:
     # is assumed that the list of values (val_list) is sorted from lowest to gratest
@@ -204,6 +215,11 @@ def exec_actv_function(function_id: int, val: float, args=np.empty(1, dtype=np.f
             return greater_cond_equality(val)
         else:
             return greater_cond_equality(val, weight=args[0])
+    if function_id == FUNC_LCEQ:
+        if args.size == 0:
+            return lower_cond_equality(val)
+        else:
+            return lower_cond_equality(val, weight=args[0])
     if function_id == FUNC_SIGMOID:
         if args.size == 0:
             return sigmoid(val)
@@ -306,10 +322,12 @@ class Activation:
             return sigmoid
         if func_name == "sigmoid_hip":
             return sigmoid_hip
-        if func_name == "gceq":
-            return greater_cond_equality
         if func_name == "fuzzy":
             return fuzzy_set
+        if func_name == "gceq":
+            return greater_cond_equality
+        if func_name == "lceq":
+            return lower_cond_equality
         return None
 
     @staticmethod
@@ -334,10 +352,12 @@ class Activation:
             return FUNC_SIGMOID
         if func_name == "sigmoid_hip":
             return FUNC_SIGMOID_HIP
-        if func_name == "gceq":
-            return FUNC_GCEQ
         if func_name == "fuzzy":
             return FUNC_FUZZY
+        if func_name == "gceq":
+            return FUNC_GCEQ
+        if func_name == "lceq":
+            return FUNC_LCEQ
         return None
 
     @staticmethod
@@ -355,6 +375,7 @@ class Activation:
         names.add("sigmoid")
         names.add("sigmoid_hip")
         names.add("gceq")
+        names.add("lceq")
         names.add("proportion")
         return names
 

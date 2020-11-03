@@ -8,10 +8,12 @@ FUNC_THREESTATE = 2
 FUNC_SIGMOID = 3
 # Sigmoid Hyperbolic / Tangent Hyperbolic -type function
 FUNC_SIGMOID_HIP = 4
-# Pulse-type function
-FUNC_GCEQ = 5
 # Fuzzy-type function
-FUNC_FUZZY = 6
+FUNC_FUZZY = 5
+# Greater conditional equality
+FUNC_GCEQ = 6
+# Greater conditional equality
+FUNC_LCEQ = 7
 
 # relations const
 RELATION_DESTINY = 0

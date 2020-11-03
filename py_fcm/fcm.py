@@ -296,6 +296,8 @@ class FuzzyCognitiveMap:
                 saturation: Values lower than 0 or highest than 1 are transformed => [0;1]
                 sigmoid: Sigmoid function => [0;1]
                 sigmoid_hip: Hyperbolic sigmoid function => [-1;1]
+                gceq: greater conditional equality => [-1,1]
+                lceq: lower conditional equality=> [-1,1]
             mem_influence: Use or not memory influence in inference
             general_activ: Estimate values of arguments in activation functions according to node inputs values
             **kwargs: Activation function arguments, depend of function
@@ -420,7 +422,8 @@ class FuzzyCognitiveMap:
         * "saturation": 1 if value is > 1, 0 if values is < 0 and value otherwise. Domain => [0,1]
         * "biestate": 1 if value is > 0, 0 otherwise. Domain => {0,1}
         * "threestate": 0 if value is < 0.25, 0.5 if 0.25 <= value <= 0.75, 1 otherwise. Domain => {0,0.5,1}
-        * "gceq": weight(float), return value if > weight, 0 otherwise. Domain => [-1,1]
+        * "gceq": weight(float), return value if >= weight, 0 otherwise. Domain => [-1,1]
+        * "lceq": weight(float), return value if <= weight, 0 otherwise. Domain => [-1,1]
         * "sigmoid": lambda_val(int), sigmoid function => [0,1]
         * "sigmoid_hip": lambda_val(int), sigmoid hyperbolic function => [-1,1]
         """

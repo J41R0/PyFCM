@@ -319,6 +319,23 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
 
+    def test_inference_lceq(self):
+        expected_json = {
+            'concepts': [{'id': 'result_1', 'is_active': True, 'type': 'DECISION', 'activation': 0.0},
+                         {'id': 'result_2', 'is_active': True, 'type': 'DECISION', 'activation': -0.06749999999999999},
+                         {'id': 'input_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.05},
+                         {'id': 'input_2', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.02},
+                         {'id': 'input_3', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.06625},
+                         {'id': 'input_4', 'is_active': True, 'type': 'SIMPLE', 'activation': -0.034999999999999996},
+                         {'id': 'input_5', 'is_active': True, 'type': 'SIMPLE', 'activation': -0.05}]
+        }
+
+        fcm = self.__init_complex_fcm()
+        fcm.set_map_activation_function('lceq', weight=0.0001)
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+
     def test_inference_several_functions(self):
         expected_json = {
             'concepts': [
