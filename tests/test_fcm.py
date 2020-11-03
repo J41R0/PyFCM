@@ -103,20 +103,20 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
     def test_concept_addition_custom_values(self) -> None:
         expected_json = {
             "concepts": [{'id': 'test', 'is_active': False, 'type': 'DECISION', 'activation': 0.0, 'use_memory': True,
-                          'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}]
+                          'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}]
         }
         self.fcm.add_concept('test', is_active=False, concept_type=TYPE_DECISION, use_memory=True,
-                             exitation_function='PAPAGEORGIUS', activation_function='sum_w', weight=0.3)
+                             exitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.3)
         json_fcm = json.loads(self.fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
 
     def test_concept_addition_with_default_definition(self) -> None:
         expected_json = {
             "concepts": [{'id': 'test', 'is_active': True, 'type': 'DECISION', 'activation': 0.0, 'use_memory': True,
-                          'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}]
+                          'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}]
         }
         self.fcm.set_default_concept_properties(concept_type=TYPE_DECISION, use_memory=True,
-                                                exitation_function='PAPAGEORGIUS', activation_function='sum_w',
+                                                exitation_function='PAPAGEORGIUS', activation_function='gceq',
                                                 weight=0.3)
         self.fcm.add_concept('test')
         json_fcm = json.loads(self.fcm.to_json())
@@ -130,10 +130,10 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         json_fcm = json.loads(self.fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
         self.fcm.set_concept_properties('test', is_active=False, concept_type=TYPE_DECISION, use_memory=True,
-                                        exitation_function='PAPAGEORGIUS', activation_function='sum_w', weight=0.3)
+                                        exitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.3)
         expected_json = {
             "concepts": [{'id': 'test', 'is_active': False, 'type': 'DECISION', 'activation': 0.0, 'use_memory': True,
-                          'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}]
+                          'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}]
         }
         json_fcm = json.loads(self.fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
@@ -302,7 +302,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
 
-    def test_inference_sum_w(self):
+    def test_inference_gceq(self):
         expected_json = {
             'concepts': [{'id': 'result_1', 'is_active': True, 'type': 'DECISION', 'activation': 0.06},
                          {'id': 'result_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.0},
@@ -314,7 +314,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         }
 
         fcm = self.__init_complex_fcm()
-        fcm.set_map_activation_function('sum_w', weight=0.0001)
+        fcm.set_map_activation_function('gceq', weight=0.0001)
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
@@ -323,7 +323,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         expected_json = {
             'concepts': [
                 {'id': 'result_1', 'is_active': True, 'type': 'DECISION', 'activation': 0.0, 'use_memory': True,
-                 'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.003}},
+                 'custom_function': 'gceq', 'custom_function_args': {'weight': 0.003}},
                 {'id': 'result_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.00012648385157387873,
                  'use_memory': True, 'custom_function': 'sigmoid', 'custom_function_args': {'lambda_val': 10}},
                 {'id': 'input_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.07375, 'use_memory': True,
@@ -336,7 +336,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
 
         fcm = self.__init_complex_fcm()
         fcm.add_concept('result_1', concept_type=TYPE_DECISION, use_memory=True,
-                        exitation_function='PAPAGEORGIUS', activation_function='sum_w', weight=0.003)
+                        exitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.003)
 
         fcm.add_concept('result_2', concept_type=TYPE_DECISION, use_memory=True,
                         exitation_function='PAPAGEORGIUS', activation_function='sigmoid', lambda_val=10)

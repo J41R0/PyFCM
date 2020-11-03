@@ -23,7 +23,7 @@ def from_json(str_json: str):
      "concepts" :
       [
         {"id": "concept_1", "type": "SIMPLE", "activation": 0.5},
-        {"id": "concept_2", "type": "DECISION", "custom_function": "sum_w", "custom_function_args": {"weight":0.3}},
+        {"id": "concept_2", "type": "DECISION", "custom_function": "gceq", "custom_function_args": {"weight":0.3}},
         {"id": "concept_3", "type": "SIMPLE", "memory_influence":true },
         {"id": "concept_4", "type": "SIMPLE", "custom_function": "saturation", "activation": 0.3}
       ],
@@ -74,7 +74,7 @@ def from_json(str_json: str):
     * "saturation": 1 if value is > 1, 0 if values is < 0 and value otherwise. Domain => [0,1]
     * "biestate": 1 if value is > 0, 0 otherwise. Domain => {0,1}
     * "threestate": 0 if value is < 0.25, 0.5 if 0.25 <= value <= 0.75, 1 otherwise. Domain => {0,0.5,1}
-    * "sum_w": weight(float), return value if > weight, 0 otherwise. Domain => [-1,1]
+    * "gceq": weight(float), return value if > weight, 0 otherwise. Domain => [-1,1]
     * "sigmoid": lambda_val(int), sigmoid function => [0,1]
     * "sigmoid_hip": lambda_val(int), sigmoid hyperbolic function => [-1,1]
 
@@ -420,7 +420,7 @@ class FuzzyCognitiveMap:
         * "saturation": 1 if value is > 1, 0 if values is < 0 and value otherwise. Domain => [0,1]
         * "biestate": 1 if value is > 0, 0 otherwise. Domain => {0,1}
         * "threestate": 0 if value is < 0.25, 0.5 if 0.25 <= value <= 0.75, 1 otherwise. Domain => {0,0.5,1}
-        * "sum_w": weight(float), return value if > weight, 0 otherwise. Domain => [-1,1]
+        * "gceq": weight(float), return value if > weight, 0 otherwise. Domain => [-1,1]
         * "sigmoid": lambda_val(int), sigmoid function => [0,1]
         * "sigmoid_hip": lambda_val(int), sigmoid hyperbolic function => [-1,1]
         """

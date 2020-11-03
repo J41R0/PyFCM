@@ -16,7 +16,7 @@ class FromJsonTests(unittest.TestCase):
          "concepts" :
           [
             {"id": "concept_1", "type": "SIMPLE", "activation": 0.5},
-            {"id": "concept_2", "type": "DECISION", "custom_function": "sum_w", "custom_function_args": {"weight":0.3}},
+            {"id": "concept_2", "type": "DECISION", "custom_function": "gceq", "custom_function_args": {"weight":0.3}},
             {"id": "concept_3", "type": "SIMPLE", "memory_influence":true },
             {"id": "concept_4", "type": "SIMPLE", "custom_function": "saturation", "activation": 0.3}
           ],
@@ -50,7 +50,7 @@ class FromJsonTests(unittest.TestCase):
                     {
                         "id": "concept_2", "is_active": True,
                         "type": "DECISION", "activation": 0.0,
-                        "custom_function": "sum_w",
+                        "custom_function": "gceq",
                         "custom_function_args": {"weight": 0.3}
                     },
                     {
@@ -92,7 +92,7 @@ class JoinMapsTests(unittest.TestCase):
              "concepts" :
               [
                 {"id": "concept_1", "type": "SIMPLE", "activation": 0.25},
-                {"id": "concept_2", "type": "DECISION", "custom_function": "sum_w", "custom_function_args": {"weight":0.3}}
+                {"id": "concept_2", "type": "DECISION", "custom_function": "gceq", "custom_function_args": {"weight":0.3}}
               ],
              "relations":
               [
@@ -110,7 +110,7 @@ class JoinMapsTests(unittest.TestCase):
              "concepts" :
               [
                 {"id": "concept_1", "type": "SIMPLE", "activation": 0.5},
-                {"id": "concept_2", "type": "DECISION", "custom_function": "sum_w", "custom_function_args": {"weight":0.3}},
+                {"id": "concept_2", "type": "DECISION", "custom_function": "gceq", "custom_function_args": {"weight":0.3}},
                 {"id": "concept_4", "type": "SIMPLE", "custom_function": "saturation", "activation": 0.3}
               ],
              "relations":
@@ -130,7 +130,7 @@ class JoinMapsTests(unittest.TestCase):
              "concepts" :
               [
                 {"id": "concept_1", "type": "SIMPLE", "activation": 0.75},
-                {"id": "concept_2", "type": "DECISION", "custom_function": "sum_w", "custom_function_args": {"weight":0.3}},
+                {"id": "concept_2", "type": "DECISION", "custom_function": "gceq", "custom_function_args": {"weight":0.3}},
                 {"id": "concept_3", "type": "SIMPLE", "memory_influence":true }
               ],
              "relations":
@@ -157,7 +157,7 @@ class JoinMapsTests(unittest.TestCase):
             "concepts": [
                 {"id": "concept_1", "is_active": True, "type": "SIMPLE", "activation": 0.5},
                 {"id": "concept_2", "is_active": True, "type": "DECISION", 'activation': 0.0,
-                 "custom_function": "sum_w", "custom_function_args": {"weight": 0.3}},
+                 "custom_function": "gceq", "custom_function_args": {"weight": 0.3}},
                 {"id": "concept_4", "is_active": True, "type": "SIMPLE", "activation": 0.3,
                  "custom_function": "saturation"},
                 {"id": "concept_3", "is_active": True, "type": "SIMPLE", "activation": 0.0},
@@ -181,7 +181,7 @@ class JoinMapsTests(unittest.TestCase):
                     "concepts": [
                         {"id": "concept_1", "is_active": True, "type": "SIMPLE", "activation": 0.5},
                         {"id": "concept_2", "is_active": True, "type": "DECISION", "activation": 0.0,
-                         "custom_function": "sum_w", "custom_function_args": {"weight": 0.3}},
+                         "custom_function": "gceq", "custom_function_args": {"weight": 0.3}},
                         {"id": "concept_4", "is_active": True, "type": "SIMPLE", "activation": 0.0,
                          "custom_function": "saturation"},
                         {"id": "concept_3", "is_active": True, "type": "SIMPLE", "activation": 0.5}
@@ -200,7 +200,7 @@ class JoinMapsTests(unittest.TestCase):
             "concepts": [
                 {'id': 'concept_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.5},
                 {'id': 'concept_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.0,
-                 'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}
+                 'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}
             ],
             "relations": [
                 {'origin': 'concept_1', 'destiny': 'concept_2', 'weight': 0.5}
@@ -220,7 +220,7 @@ class JoinMapsTests(unittest.TestCase):
             "concepts": [
                 {'id': 'concept_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.75},
                 {'id': 'concept_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.0,
-                 'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}
+                 'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}
             ],
             "relations": [
                 {'origin': 'concept_1', 'destiny': 'concept_2', 'weight': 0.75}
@@ -240,7 +240,7 @@ class JoinMapsTests(unittest.TestCase):
             "concepts": [
                 {'id': 'concept_1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.25},
                 {'id': 'concept_2', 'is_active': True, 'type': 'DECISION', 'activation': 0.0,
-                 'custom_function': 'sum_w', 'custom_function_args': {'weight': 0.3}}
+                 'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}
             ],
             "relations": [
                 {'origin': 'concept_1', 'destiny': 'concept_2', 'weight': 0.25}

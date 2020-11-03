@@ -124,7 +124,7 @@ def threestate(val: float) -> float:
 
 
 @njit
-def sum_w(val: float, weight=-1.0) -> float:
+def greater_cond_equality(val: float, weight=-1.0) -> float:
     if val >= weight:
         if val > 1:
             return 1
@@ -199,11 +199,11 @@ def exec_actv_function(function_id: int, val: float, args=np.empty(1, dtype=np.f
         return bistate(val)
     if function_id == FUNC_THREESTATE:
         return threestate(val)
-    if function_id == FUNC_SUM_W:
+    if function_id == FUNC_GCEQ:
         if args.size == 0:
-            return sum_w(val)
+            return greater_cond_equality(val)
         else:
-            return sum_w(val, weight=args[0])
+            return greater_cond_equality(val, weight=args[0])
     if function_id == FUNC_SIGMOID:
         if args.size == 0:
             return sigmoid(val)
@@ -306,8 +306,8 @@ class Activation:
             return sigmoid
         if func_name == "sigmoid_hip":
             return sigmoid_hip
-        if func_name == "sum_w":
-            return sum_w
+        if func_name == "gceq":
+            return greater_cond_equality
         if func_name == "fuzzy":
             return fuzzy_set
         return None
@@ -334,8 +334,8 @@ class Activation:
             return FUNC_SIGMOID
         if func_name == "sigmoid_hip":
             return FUNC_SIGMOID_HIP
-        if func_name == "sum_w":
-            return FUNC_SUM_W
+        if func_name == "gceq":
+            return FUNC_GCEQ
         if func_name == "fuzzy":
             return FUNC_FUZZY
         return None
@@ -354,7 +354,7 @@ class Activation:
         names.add("tan_hip")
         names.add("sigmoid")
         names.add("sigmoid_hip")
-        names.add("sum_w")
+        names.add("gceq")
         names.add("proportion")
         return names
 
@@ -367,7 +367,7 @@ sigmoid_hip_lambda(500, 0.85)
 bistate(10)
 threestate(10)
 saturation(10)
-sum_w(10, 0.5)
+greater_cond_equality(10, 0.5)
 fuzzy_set(10, np.array([0.0, 1.0]), np.array([5, 15]))
 exec_actv_function(2, 10, np.array([2.0]))
 

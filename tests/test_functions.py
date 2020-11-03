@@ -69,8 +69,8 @@ class ActivationFunctionsTests(unittest.TestCase):
         res = test_concept[NODE_ACTV_FUNC](-1)
         self.assertEqual(-0.7615941559557649, res)
 
-    def test_sum_w(self):
-        test_concept = create_concept(activ_function='sum_w')
+    def test_gceq(self):
+        test_concept = create_concept(activ_function='gceq')
         res = test_concept[NODE_ACTV_FUNC](0.7, 0.5)
         self.assertEqual(0.7, res)
         res = test_concept[NODE_ACTV_FUNC](7, 0.5)
