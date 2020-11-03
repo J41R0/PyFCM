@@ -173,8 +173,6 @@ class JoinMapsTests(unittest.TestCase):
         self.assertEqual(expected, fcm_json)
 
     def test_inference_after_join(self):
-        fcm = join_maps([self.fcm1, self.fcm2, self.fcm3])
-        fcm.run_inference()
         expected = {"max_iter": 500, "decision_function": "LAST", "activation_function": "sigmoid",
                     "memory_influence": False,
                     "stability_diff": 0.001, "stop_at_stabilize": True, "extra_steps": 5, "weight": 1,
@@ -191,6 +189,12 @@ class JoinMapsTests(unittest.TestCase):
                         {"origin": "concept_4", "destiny": "concept_2", "weight": 0.2},
                         {"origin": "concept_2", "destiny": "concept_3", "weight": 0.8911}
                     ]}
+        fcm = join_maps([self.fcm1, self.fcm2, self.fcm3])
+        fcm.run_inference()
+        fcm_json = json.loads(fcm.to_json())
+        self.assertEqual(expected, fcm_json)
+        fcm.debug = False
+        fcm.run_inference()
         fcm_json = json.loads(fcm.to_json())
         self.assertEqual(expected, fcm_json)
 

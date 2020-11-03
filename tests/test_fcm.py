@@ -186,9 +186,16 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
 
     def test_is_stable(self):
         fcm = self.__init_complex_fcm()
+        fcm.run_inference()
+        self.assertEqual(True, fcm.is_stable())
+        fcm.debug = False
         fcm.run_inference()
         self.assertEqual(True, fcm.is_stable())
 
@@ -197,11 +204,17 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         fcm.run_inference()
         expected_result = {'result_1': 0.056969360711939906, 'result_2': -0.06113548755394814}
         self.assertEqual(expected_result, fcm.get_final_state())
+        fcm.debug = False
+        fcm.run_inference()
+        self.assertEqual(expected_result, fcm.get_final_state())
 
     def test_search_concept_final_state_arg(self):
         fcm = self.__init_complex_fcm()
         fcm.run_inference()
         expected_result = {'result_1': 0.056969360711939906}
+        self.assertEqual(expected_result, fcm.get_final_state(names=['result_1']))
+        fcm.debug = False
+        fcm.run_inference()
         self.assertEqual(expected_result, fcm.get_final_state(names=['result_1']))
 
     def test_get_final_state_any(self):
@@ -212,11 +225,17 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
                            'input_3': 0.09792163723261006, 'input_4': -0.034888503362331805,
                            'input_5': -0.05}
         self.assertEqual(expected_result, fcm.get_final_state("any"))
+        fcm.debug = False
+        fcm.run_inference()
+        self.assertEqual(expected_result, fcm.get_final_state("any"))
 
     def test_get_final_state_custom_type(self):
         fcm = self.__init_complex_fcm()
         fcm.run_inference()
         expected_result = {'result_1': 0.056969360711939906, 'result_2': -0.06113548755394814}
+        self.assertEqual(expected_result, fcm.get_final_state(TYPE_DECISION))
+        fcm.debug = False
+        fcm.run_inference()
         self.assertEqual(expected_result, fcm.get_final_state(TYPE_DECISION))
 
     def test_reset_execution(self):
@@ -249,6 +268,10 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
 
     def test_inference_biestate(self):
         expected_json = {
@@ -264,6 +287,10 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
 
         fcm = self.__init_complex_fcm()
         fcm.set_map_activation_function('biestate')
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
@@ -284,6 +311,10 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
 
     def test_inference_saturation(self):
         expected_json = {
@@ -298,6 +329,10 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
 
         fcm = self.__init_complex_fcm()
         fcm.set_map_activation_function('saturation')
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
@@ -318,6 +353,10 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
 
     def test_inference_lceq(self):
         expected_json = {
@@ -332,6 +371,10 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
 
         fcm = self.__init_complex_fcm()
         fcm.set_map_activation_function('lceq', weight=0.0001)
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
@@ -361,6 +404,10 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         fcm.add_concept('input_1', use_memory=True, exitation_function='PAPAGEORGIUS',
                         activation_function='threestate')
         fcm.init_concept('input_1', 0.59)
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
         fcm.run_inference()
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
