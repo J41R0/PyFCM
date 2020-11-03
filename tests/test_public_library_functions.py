@@ -273,3 +273,16 @@ class JoinMapsTests(unittest.TestCase):
         except Exception as err:
             res = str(err)
         self.assertEqual(expected, res)
+
+    def test_join_empty_map_set(self):
+        fcm = join_maps([],
+                        concept_strategy='intersection',
+                        value_strategy='highest',
+                        relation_strategy='highest')
+
+        expected = {"max_iter": 200, "decision_function": "MEAN", "activation_function": "sigmoid_hip",
+                    "memory_influence": False, "stability_diff": 0.001, "stop_at_stabilize": True,
+                    "extra_steps": 5, "weight": 1, "concepts": [], "relations": []}
+
+        fcm_json = json.loads(fcm.to_json())
+        self.assertEqual(expected, fcm_json)
