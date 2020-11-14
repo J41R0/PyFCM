@@ -428,7 +428,7 @@ class FuzzyCognitiveMap:
         * "sigmoid_hip": lambda_val(int), sigmoid hyperbolic function => [-1,1]
         """
         self.__prepared_data = False
-        self.__topology[concept_name] = {NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
+        self.__topology[concept_name] = {NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0, NODE_MAX_ACTV: 0.0}
 
         if is_active is not None and type(is_active) == bool:
             self.__topology[concept_name][NODE_ACTIVE] = is_active
@@ -632,8 +632,9 @@ class FuzzyCognitiveMap:
         """
         self.__prepared_data = False
         if destiny_concept in self.__topology and origin_concept in self.__topology:
-            # FIXME: NODE_ARCS usages will be deprecated
+            # TODO: NODE_ARCS usages deprecation
             self.__topology[origin_concept][NODE_ARCS].append((destiny_concept, weight))
+            self.__topology[destiny_concept][NODE_MAX_ACTV] += weight
             self.__arc_list.append((destiny_concept, weight, origin_concept))
 
     def get_concept_outgoing_relations(self, concept_name):
