@@ -7,7 +7,7 @@ from numba.typed import List
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 
-from py_fcm.functions import Activation, Excitation, Decision, Fuzzy, vectorized_run
+from py_fcm.functions import Activation, Excitation, Decision, Fuzzy, vectorized_run, sigmoid_lambda, sigmoid_hip_lambda
 from py_fcm.__const import *
 
 
@@ -350,6 +350,8 @@ class FuzzyCognitiveMap:
 
         # if is false execution data will not be stored
         self.debug = True
+        # fit inclination for sigmoid or sigmoid_hip functions
+        self.fit_inclination = None
 
         self.__prepared_data = False
         self.__relation_matrix = None
@@ -600,7 +602,6 @@ class FuzzyCognitiveMap:
             self._default_concept[NODE_ACTV_FUNC] = Activation.fuzzy_set
             self._default_concept[NODE_ACTV_FUNC_NAME] = 'FUZZY'
             self._default_concept[NODE_ACTV_FUNC_ARGS] = activation_dict
-            vec_actv_funct_args = FuzzyCognitiveMap.__process_function_args(activation_dict)
         elif activation_function is not None:
             actv_function = Activation.get_function_by_name(activation_function)
             if actv_function is not None:
@@ -635,6 +636,23 @@ class FuzzyCognitiveMap:
             # TODO: NODE_ARCS usages deprecation
             self.__topology[origin_concept][NODE_ARCS].append((destiny_concept, weight))
             self.__topology[destiny_concept][NODE_MAX_ACTV] += weight
+
+            # TODO: refactor fit inclination behavior
+            if self.fit_inclination is not None:
+                new_lambda = None
+                if self.__topology[destiny_concept][NODE_ACTV_FUNC_NAME] == "sigmoid":
+                    new_lambda = sigmoid_lambda(self.__topology[destiny_concept][NODE_MAX_ACTV],
+                                                self.fit_inclination)
+                if self.__topology[destiny_concept][NODE_ACTV_FUNC_NAME] == "sigmoid_hip":
+                    new_lambda = sigmoid_hip_lambda(self.__topology[destiny_concept][NODE_MAX_ACTV],
+                                                    self.fit_inclination)
+
+                if new_lambda is not None:
+                    new_args = {"lambda_val": new_lambda}
+                    self.__topology[destiny_concept][NODE_ACTV_FUNC_ARGS] = new_args
+                    vec_actv_func_args = FuzzyCognitiveMap.__process_function_args(new_args)
+                    self.__topology[destiny_concept][NODE_ACTV_FUNC_ARGS_VECT] = vec_actv_func_args
+
             self.__arc_list.append((destiny_concept, weight, origin_concept))
 
     def get_concept_outgoing_relations(self, concept_name):
