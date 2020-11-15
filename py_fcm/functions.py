@@ -11,8 +11,8 @@ from py_fcm.__const import *
 # vectorized inference process
 @njit
 def vectorized_run(state_vector: np.ndarray, relation_matrix: np.ndarray, functions: np.ndarray, func_args: List,
-                   memory_usage: List, avoid_saturation: List, max_iterations: int, min_diff: float,
-                   extra_steps: int):
+                   reduce_values: np.ndarray, memory_usage: List, avoid_saturation: List, max_iterations: int,
+                   min_diff: float, extra_steps: int):
     output = np.full((state_vector.size, max_iterations), 2.0)
     keep_execution = True
     extra_steps_counter = extra_steps
@@ -33,7 +33,8 @@ def vectorized_run(state_vector: np.ndarray, relation_matrix: np.ndarray, functi
         for val_pos in range(state_vector.size):
             if memory_usage[val_pos]:
                 new_state[val_pos] = new_state[val_pos] + state_vector[val_pos]
-
+            if reduce_values[val_pos] > 0:
+                new_state[val_pos] = new_state[val_pos] / reduce_values[val_pos]
             new_state[val_pos] = exec_actv_function(functions[val_pos], new_state[val_pos], func_args[val_pos])
             output[val_pos][current_step] = new_state[val_pos]
 
