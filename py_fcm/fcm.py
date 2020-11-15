@@ -691,8 +691,19 @@ class FuzzyCognitiveMap:
                 raise Exception("Missing concept " + concept_name)
             else:
                 return
-        self.__topology[concept_name][NODE_VALUE] = value
-        self.__execution[concept_name] = [value]
+        if self.__topology[concept_name][NODE_ACTV_FUNC_NAME] == 'fuzzy':
+            membership = self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['membership']
+            val_list = self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['val_list']
+            if type(membership) == list or type(val_list) == list:
+                membership = np.array(membership)
+                val_list = np.array(val_list)
+            fuzzy_actv_function = Activation.get_function_by_name('fuzzy')
+            actv_value = fuzzy_actv_function(value, membership=membership, val_list=val_list)
+            self.__topology[concept_name][NODE_VALUE] = actv_value
+            self.__execution[concept_name] = [actv_value]
+        else:
+            self.__topology[concept_name][NODE_VALUE] = value
+            self.__execution[concept_name] = [value]
 
     def is_stable(self):
         """
