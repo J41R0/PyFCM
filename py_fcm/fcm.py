@@ -392,11 +392,15 @@ class FuzzyCognitiveMap:
         arg_names.sort()
         values = []
         for arg in arg_names:
-            if type(args_dict[arg]) == list:
-                for val in args_dict[arg]:
-                    values.append(val)
-            else:
+            if type(args_dict[arg]) == str:
                 values.append(args_dict[arg])
+            else:
+                try:
+                    iterator = iter(args_dict[arg])
+                    for val in args_dict[arg]:
+                        values.append(val)
+                except TypeError:
+                    values.append(args_dict[arg])
         return np.array(values, dtype=np.float64)
 
     def add_concept(self, concept_name: str, concept_type=None, is_active=None, use_memory=None,
@@ -475,7 +479,7 @@ class FuzzyCognitiveMap:
         # define activation function
         self.__topology[concept_name][NODE_USE_MAP_FUNC] = False
         if activation_dict is not None:
-            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
+            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_const_by_name("fuzzy")
             self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'FUZZY'
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
             vec_actv_funct_args = FuzzyCognitiveMap.__process_function_args(activation_dict)
@@ -539,7 +543,7 @@ class FuzzyCognitiveMap:
             # define activation function
             self.__topology[concept_name][NODE_USE_MAP_FUNC] = False
             if activation_dict is not None:
-                self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
+                self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_const_by_name("fuzzy")
                 self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'FUZZY'
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
                 vec_actv_funct_args = FuzzyCognitiveMap.__process_function_args(activation_dict)
@@ -599,7 +603,7 @@ class FuzzyCognitiveMap:
         # define activation function
         self._default_concept[NODE_USE_MAP_FUNC] = False
         if activation_dict is not None:
-            self._default_concept[NODE_ACTV_FUNC] = Activation.fuzzy_set
+            self._default_concept[NODE_ACTV_FUNC] = Activation.get_const_by_name("fuzzy")
             self._default_concept[NODE_ACTV_FUNC_NAME] = 'FUZZY'
             self._default_concept[NODE_ACTV_FUNC_ARGS] = activation_dict
         elif activation_function is not None:
