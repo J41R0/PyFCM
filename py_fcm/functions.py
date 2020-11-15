@@ -134,6 +134,12 @@ def lower_cond_equality(val: float, weight=1.0) -> float:
 def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
               val_list=np.empty(1, dtype=np.float64)) -> float:
     # is assumed that the list of values (val_list) is sorted from lowest to gratest
+
+    negative_activation = False
+    if 0 <= val_list.min() <= 1 and 0 <= val_list.max() <= 1 and value < 0:
+        negative_activation = True
+        value = abs(value)
+
     # minimum value
     if value <= val_list.min():
         return membership.min()
@@ -148,7 +154,10 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
     # find nearest values index
     index = (np.abs(val_list - value)).argmin()
     if val_list[index] == value:
-        return membership[index]
+        if not negative_activation:
+            return membership[index]
+        else:
+            return -1 * (1 - membership[index])
     if index == 0:
         next_pos = 1
     elif index == val_list.size - 1:
@@ -178,13 +187,15 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
     # 1 - inf_coef
     sup_coef = 1 - ((val_list[next_pos] - value) / diff)
     # result estimation according to distance between extremes
-
     estimation = sign * ((inf_coef * inf_estimation) + (sup_coef * sup_estimation))
-    if estimation > 1:
-        estimation = 1
-    if estimation < -1:
-        estimation = -1
-    return estimation
+
+    if not negative_activation:
+        if estimation > 1:
+            estimation = 1
+        if estimation < -1:
+            estimation = -1
+        return estimation
+    return -1 * (1 - estimation)
 
 
 @njit
@@ -225,7 +236,7 @@ def exec_actv_function(function_id: int, val: float, args=np.empty(1, dtype=np.f
 __empt_arr = np.ones(2, np.float64)
 __empt_mat = np.ones((2, 2), np.float64)
 vectorized_run(__empt_arr, __empt_mat, __empt_arr, List([__empt_arr, __empt_arr]),
-               List([True, False]), List([True, False]),
+               __empt_arr, List([True, False]), List([True, False]),
                max_iterations=3, min_diff=0.0001, extra_steps=0)
 
 # ensure activation functions numba compilation
