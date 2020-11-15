@@ -137,20 +137,12 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
     # is assumed that the list of values (val_list) is sorted from lowest to gratest
 
     negative_activation = False
-    if 0 <= val_list.min() <= 1 and 0 <= val_list.max() <= 1 and value < 0:
+    if 0.0 <= val_list.min() <= 1.0 and 0.0 <= val_list.max() <= 1.0 and value < 0.0:
         negative_activation = True
         value = abs(value)
 
-    # minimum value
-    if value <= val_list.min():
-        return membership.min()
-    # maximum value
-    if value >= val_list.max():
-        return membership.max()
-
     # result positions
     prev_pos = 0
-    next_pos = 0
 
     # find nearest values index
     index = (np.abs(val_list - value)).argmin()
