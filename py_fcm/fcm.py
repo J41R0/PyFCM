@@ -132,6 +132,9 @@ def from_json(str_json: str):
             custom_func_args = {}
             if 'custom_function_args' in concept:
                 custom_func_args = concept['custom_function_args']
+            activation_dict = None
+            if 'activation_dict' in concept:
+                activation_dict = concept['activation_dict']
             concept_type = TYPE_SIMPLE
             if concept['type'] == 'DECISION':
                 concept_type = TYPE_DECISION
@@ -141,6 +144,7 @@ def from_json(str_json: str):
                                use_memory=use_mem,
                                exitation_function=exitation,
                                activation_function=custom_function,
+                               activation_dict=activation_dict,
                                **custom_func_args)
             if 'activation' in concept:
                 my_fcm.init_concept(concept['id'], concept['activation'])
