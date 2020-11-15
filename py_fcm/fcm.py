@@ -773,6 +773,9 @@ class FuzzyCognitiveMap:
                 exec_val = self.__topology[node][NODE_EXEC_FUNC](self.__topology[node])
                 # reset NODE_AUX after calculate the execution value
                 self.__topology[node][NODE_AUX].clear()  # = []
+                # normalize values for fuzzy activation nodes
+                if self.__topology[node][NODE_ACTV_FUNC_NAME] == 'fuzzy':
+                    exec_val = exec_val / self.__topology[node][NODE_MAX_ACTV]
                 result = self.__topology[node][NODE_ACTV_FUNC](exec_val, **self.__topology[node][NODE_ACTV_FUNC_ARGS])
                 # update execution values
                 self.__topology[node][NODE_VALUE] = result
@@ -786,16 +789,21 @@ class FuzzyCognitiveMap:
             self.__prepared_data = True
             self.__relation_matrix = np.zeros((len(self.__topology), len(self.__topology)), dtype=np.float64)
             self.__state_vector = np.zeros(len(self.__topology), dtype=np.float64)
-            self.__functions = []
+            self.__functions = np.zeros(len(self.__topology), dtype=np.int32)
             self.__memory_usage = []
+            self.__normalize_values = np.zeros(len(self.__topology), dtype=np.float64)
             self.__function_args = []
             self.__avoid_saturation = []
             for concept_pos in range(len(concepts)):
                 self.__state_vector[concept_pos] = self.__topology[concepts[concept_pos]][NODE_VALUE]
-                self.__functions.append(
-                    Activation.get_const_by_name(self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_NAME]))
+                self.__functions[concept_pos] = Activation.get_const_by_name(
+                    self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_NAME])
                 self.__function_args.append(self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_ARGS_VECT])
                 self.__memory_usage.append(self.__topology[concepts[concept_pos]][NODE_USE_MEM])
+                # normalize fuzzy activation input
+                if self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_NAME] == 'fuzzy':
+                    self.__normalize_values[concept_pos] = self.__topology[concepts[concept_pos]][NODE_MAX_ACTV]
+
                 if 'PAPAGEORGIUS' == self.__topology[concepts[concept_pos]][NODE_EXEC_FUNC_NAME]:
                     self.__avoid_saturation.append(True)
                 else:
@@ -809,8 +817,8 @@ class FuzzyCognitiveMap:
                 self.__relation_matrix[origin_index][dest_index] = weight
         # print(self.__relation_matrix)
         # run vectorized jit inference process
-        result = vectorized_run(self.__state_vector, self.__relation_matrix, np.array(self.__functions, dtype=np.int32),
-                                List(self.__function_args), List(self.__memory_usage),
+        result = vectorized_run(self.__state_vector, self.__relation_matrix, self.__functions,
+                                List(self.__function_args), self.__normalize_values, List(self.__memory_usage),
                                 List(self.__avoid_saturation), np.int32(self.max_iter),
                                 np.float64(self.stability_diff), np.int32(self.__extra_steps))
         self.__state_vector = result[:, 0]
