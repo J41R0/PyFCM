@@ -90,11 +90,11 @@ class AssociationBasedFCM:
             related_concepts = self.__features[feat_name][CONCEPT_DESC][FEATURE_CONCEPTS]
             for concept1_pos in range(len(related_concepts) - 1):
                 for concept2_pos in range(concept1_pos + 1, len(related_concepts)):
-                    self.__fcm.add_relation(related_concepts[concept1_pos],
-                                            related_concepts[concept2_pos],
+                    self.__fcm.add_relation(self.__features[feat_name][CONCEPT_NAMES][concept1_pos],
+                                            self.__features[feat_name][CONCEPT_NAMES][concept2_pos],
                                             self.__exclusion_val)
-                    self.__fcm.add_relation(related_concepts[concept2_pos],
-                                            related_concepts[concept1_pos],
+                    self.__fcm.add_relation(self.__features[feat_name][CONCEPT_NAMES][concept2_pos],
+                                            self.__features[feat_name][CONCEPT_NAMES][concept1_pos],
                                             self.__exclusion_val)
 
     def __def_feat_relations(self, feat_name):
