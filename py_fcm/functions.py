@@ -271,7 +271,7 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
 
 
 # ensure functions numba compilation
-dual_quick_sort(np.array([2, 5, 1]), 0, 3, np.array([2, 5, 1]))
+dual_quick_sort(np.array([2, 5, 1]), 0, 2, np.array([2, 5, 1]))
 __empt_arr = np.ones(2, np.float64)
 __empt_mat = np.ones((2, 2), np.float64)
 vectorized_run(__empt_arr, __empt_mat, __empt_arr, List([__empt_arr, __empt_arr]),
