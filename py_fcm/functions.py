@@ -8,11 +8,78 @@ from numba import njit
 from py_fcm.__const import *
 
 
+@njit
+def __partition(array: np.array, start: int, end: int, mirrored_array: np.array):
+    pivot = array[start]
+    low = start + 1
+    high = end
+
+    while True:
+        while low <= high and array[high] >= pivot:
+            high = high - 1
+
+        while low <= high and array[low] <= pivot:
+            low = low + 1
+        if low <= high:
+            array[low], array[high] = array[high], array[low]
+            mirrored_array[low], mirrored_array[high] = mirrored_array[high], mirrored_array[low]
+        else:
+            break
+
+    array[start], array[high] = array[high], array[start]
+    mirrored_array[start], mirrored_array[high] = mirrored_array[high], mirrored_array[start]
+
+    return high
+
+
+@njit
+def dual_quick_sort(main_array: np.array, start: int, end: int, mirrored_array: np.array):
+    if start >= end:
+        return
+    p = __partition(main_array, start, end, mirrored_array)
+    dual_quick_sort(main_array, start, p - 1, mirrored_array)
+    dual_quick_sort(main_array, p + 1, end, mirrored_array)
+
+
+@njit
+def __exec_actv_function(function_id: int, val: float, args=np.empty(1, dtype=np.float64)) -> float:
+    if function_id == FUNC_SATURATION:
+        return saturation(val)
+    if function_id == FUNC_BISTATE:
+        return bistate(val)
+    if function_id == FUNC_THREESTATE:
+        return threestate(val)
+    if function_id == FUNC_GCEQ:
+        if args.size == 0:
+            return greater_cond_equality(val)
+        else:
+            return greater_cond_equality(val, weight=args[0])
+    if function_id == FUNC_LCEQ:
+        if args.size == 0:
+            return lower_cond_equality(val)
+        else:
+            return lower_cond_equality(val, weight=args[0])
+    if function_id == FUNC_SIGMOID:
+        if args.size == 0:
+            return sigmoid(val)
+        else:
+            return sigmoid(val, lambda_val=args[0])
+    if function_id == FUNC_SIGMOID_HIP:
+        if args.size == 0:
+            return sigmoid_hip(val)
+        else:
+            return sigmoid_hip(val, lambda_val=args[0])
+    if function_id == FUNC_FUZZY:
+        membership = args[:int(args.size / 2)]
+        val_list = args[int(args.size / 2):]
+        return fuzzy_set(val, membership, val_list)
+
+
 # vectorized inference process
 @njit
 def vectorized_run(state_vector: np.ndarray, relation_matrix: np.ndarray, functions: np.ndarray, func_args: List,
-                   memory_usage: List, avoid_saturation: List, max_iterations: int, min_diff: float,
-                   extra_steps: int):
+                   reduce_values: np.ndarray, memory_usage: List, avoid_saturation: List, max_iterations: int,
+                   min_diff: float, extra_steps: int):
     output = np.full((state_vector.size, max_iterations), 2.0)
     keep_execution = True
     extra_steps_counter = extra_steps
@@ -33,8 +100,9 @@ def vectorized_run(state_vector: np.ndarray, relation_matrix: np.ndarray, functi
         for val_pos in range(state_vector.size):
             if memory_usage[val_pos]:
                 new_state[val_pos] = new_state[val_pos] + state_vector[val_pos]
-
-            new_state[val_pos] = exec_actv_function(functions[val_pos], new_state[val_pos], func_args[val_pos])
+            if reduce_values[val_pos] > 0:
+                new_state[val_pos] = new_state[val_pos] / reduce_values[val_pos]
+            new_state[val_pos] = __exec_actv_function(functions[val_pos], new_state[val_pos], func_args[val_pos])
             output[val_pos][current_step] = new_state[val_pos]
 
             if avoid_saturation[val_pos]:
@@ -134,26 +202,39 @@ def lower_cond_equality(val: float, weight=1.0) -> float:
 def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
               val_list=np.empty(1, dtype=np.float64)) -> float:
     # is assumed that the list of values (val_list) is sorted from lowest to gratest
-    # minimum value
-    if value <= val_list.min():
-        return membership.min()
-    # maximum value
-    if value >= val_list.max():
-        return membership.max()
+
+    negative_activation = False
+    if 0.0 <= val_list.min() <= 1.0 and 0.0 <= val_list.max() <= 1.0 and value < 0.0:
+        negative_activation = True
+        value = abs(value)
 
     # result positions
     prev_pos = 0
-    next_pos = 0
 
     # find nearest values index
     index = (np.abs(val_list - value)).argmin()
     if val_list[index] == value:
-        return membership[index]
+        if not negative_activation:
+            return membership[index]
+        else:
+            return -1 * (1 - membership[index])
     if index == 0:
-        next_pos = 1
+        if val_list[index] > value:
+            if not negative_activation:
+                return membership[index]
+            else:
+                return -1 * (1 - membership[index])
+        else:
+            next_pos = 1
     elif index == val_list.size - 1:
-        prev_pos = index - 1
-        next_pos = index
+        if val_list[index] < value:
+            if not negative_activation:
+                return membership[index]
+            else:
+                return -1 * (1 - membership[index])
+        else:
+            prev_pos = index - 1
+            next_pos = index
     else:
         if (value - val_list[index]) > 0:
             prev_pos = index
@@ -178,57 +259,25 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
     # 1 - inf_coef
     sup_coef = 1 - ((val_list[next_pos] - value) / diff)
     # result estimation according to distance between extremes
-
     estimation = sign * ((inf_coef * inf_estimation) + (sup_coef * sup_estimation))
-    if estimation > 1:
-        estimation = 1
-    if estimation < -1:
-        estimation = -1
-    return estimation
+
+    if not negative_activation:
+        if estimation > 1:
+            estimation = 1
+        if estimation < -1:
+            estimation = -1
+        return estimation
+    return -1 * (1 - estimation)
 
 
-@njit
-def exec_actv_function(function_id: int, val: float, args=np.empty(1, dtype=np.float64)) -> float:
-    if function_id == FUNC_SATURATION:
-        return saturation(val)
-    if function_id == FUNC_BISTATE:
-        return bistate(val)
-    if function_id == FUNC_THREESTATE:
-        return threestate(val)
-    if function_id == FUNC_GCEQ:
-        if args.size == 0:
-            return greater_cond_equality(val)
-        else:
-            return greater_cond_equality(val, weight=args[0])
-    if function_id == FUNC_LCEQ:
-        if args.size == 0:
-            return lower_cond_equality(val)
-        else:
-            return lower_cond_equality(val, weight=args[0])
-    if function_id == FUNC_SIGMOID:
-        if args.size == 0:
-            return sigmoid(val)
-        else:
-            return sigmoid(val, lambda_val=args[0])
-    if function_id == FUNC_SIGMOID_HIP:
-        if args.size == 0:
-            return sigmoid_hip(val)
-        else:
-            return sigmoid_hip(val, lambda_val=args[0])
-    if function_id == FUNC_FUZZY:
-        membership = args[:int(args.size / 2)]
-        val_list = args[int(args.size / 2):]
-        return fuzzy_set(val, membership, val_list)
-
-
-# ensure  vectorized_run compilation
+# ensure functions numba compilation
+dual_quick_sort(np.array([2, 5, 1]), 0, 2, np.array([2, 5, 1]))
 __empt_arr = np.ones(2, np.float64)
 __empt_mat = np.ones((2, 2), np.float64)
 vectorized_run(__empt_arr, __empt_mat, __empt_arr, List([__empt_arr, __empt_arr]),
-               List([True, False]), List([True, False]),
+               __empt_arr, List([True, False]), List([True, False]),
                max_iterations=3, min_diff=0.0001, extra_steps=0)
 
-# ensure activation functions numba compilation
 sigmoid(10, 1.5)
 sigmoid_lambda(500, 0.8)
 sigmoid_hip(10)
@@ -238,7 +287,6 @@ threestate(10)
 saturation(10)
 greater_cond_equality(10, 0.5)
 fuzzy_set(10, np.array([0.0, 1.0]), np.array([5, 15]))
-exec_actv_function(2, 10, np.array([2.0]))
 
 
 class Activation:

@@ -1,14 +1,11 @@
 import json
 import random
 
-import numpy as np
 import networkx as nx
-from numba.typed import List
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 
-from py_fcm.functions import Activation, Excitation, Decision, Fuzzy, vectorized_run
-from py_fcm.__const import *
+from py_fcm.functions import *
 
 
 def from_json(str_json: str):
@@ -132,6 +129,9 @@ def from_json(str_json: str):
             custom_func_args = {}
             if 'custom_function_args' in concept:
                 custom_func_args = concept['custom_function_args']
+            activation_dict = None
+            if 'activation_dict' in concept:
+                activation_dict = concept['activation_dict']
             concept_type = TYPE_SIMPLE
             if concept['type'] == 'DECISION':
                 concept_type = TYPE_DECISION
@@ -141,6 +141,7 @@ def from_json(str_json: str):
                                use_memory=use_mem,
                                exitation_function=exitation,
                                activation_function=custom_function,
+                               activation_dict=activation_dict,
                                **custom_func_args)
             if 'activation' in concept:
                 my_fcm.init_concept(concept['id'], concept['activation'])
@@ -350,6 +351,8 @@ class FuzzyCognitiveMap:
 
         # if is false execution data will not be stored
         self.debug = True
+        # fit inclination for sigmoid or sigmoid_hip functions
+        self.fit_inclination = None
 
         self.__prepared_data = False
         self.__relation_matrix = None
@@ -390,12 +393,31 @@ class FuzzyCognitiveMap:
         arg_names.sort()
         values = []
         for arg in arg_names:
-            if type(args_dict[arg]) == list:
-                for val in args_dict[arg]:
-                    values.append(val)
-            else:
+            if type(args_dict[arg]) == str:
                 values.append(args_dict[arg])
+            else:
+                try:
+                    iterator = iter(args_dict[arg])
+                    for val in args_dict[arg]:
+                        values.append(val)
+                except TypeError:
+                    values.append(args_dict[arg])
         return np.array(values, dtype=np.float64)
+
+    @staticmethod
+    def __process_activation_dict(activation_dict):
+        # sort and scale activation dict
+        val_list = np.array(activation_dict['val_list'], dtype=np.float64)
+        membership = np.array(activation_dict['membership'], dtype=np.float64)
+        scaled_val_list = np.zeros((len(val_list),), dtype=np.float64)
+        dual_quick_sort(val_list, 0, len(val_list) - 1, membership)
+        min_val = abs(val_list[0])
+        max_val = val_list[len(val_list) - 1]
+        for val_pos in range(len(val_list)):
+            scaled_val_list[val_pos] = (val_list[val_pos] + min_val) / (min_val + max_val)
+        new_activation_dict = {'val_list': val_list, 'membership': membership}
+        scaled_activation_dict = {'val_list': scaled_val_list, 'membership': membership}
+        return new_activation_dict, scaled_activation_dict
 
     def add_concept(self, concept_name: str, concept_type=None, is_active=None, use_memory=None,
                     exitation_function=None, activation_dict=None, activation_function=None, **kwargs):
@@ -426,9 +448,10 @@ class FuzzyCognitiveMap:
         * "lceq": weight(float), return value if <= weight, 0 otherwise. Domain => [-1,1]
         * "sigmoid": lambda_val(int), sigmoid function => [0,1]
         * "sigmoid_hip": lambda_val(int), sigmoid hyperbolic function => [-1,1]
+        * "fuzzy" : fuzzy set activation, is set when is a fuzzy node type and an activation_dict are provided
         """
         self.__prepared_data = False
-        self.__topology[concept_name] = {NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0}
+        self.__topology[concept_name] = {NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0, NODE_MAX_ACTV: 0.0}
 
         if is_active is not None and type(is_active) == bool:
             self.__topology[concept_name][NODE_ACTIVE] = is_active
@@ -453,17 +476,20 @@ class FuzzyCognitiveMap:
 
         # scale and normalize the values for fuzzy function
         # activation_dict = {'membership':[],'val_list':[]}
-        if (concept_type == TYPE_FUZZY or concept_type == TYPE_REGRESOR) and activation_dict is not None:
-            self.__topology[concept_name][NODE_FUZZY_ACTIVATION] = activation_dict
-            # scale for only positive values
-            self.__topology[concept_name][NODE_FUZZY_MIN] = abs(min(activation_dict['val_list']))
-            for pos in range(len(activation_dict['val_list'])):
-                activation_dict['val_list'][pos] += self.__topology[concept_name][NODE_FUZZY_MIN]
-            # normalize positive values
-            self.__topology[concept_name][NODE_FUZZY_MAX] = max(activation_dict['val_list'])
-            for pos in range(len(activation_dict['val_list'])):
-                activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.__topology[concept_name][
-                    NODE_FUZZY_MAX]
+        if (self.__topology[concept_name][NODE_TYPE] == TYPE_FUZZY or
+                self.__topology[concept_name][NODE_TYPE] == TYPE_REGRESOR):
+            if activation_dict is not None:
+                new_activation_dict, scaled_activation_dict = FuzzyCognitiveMap.__process_activation_dict(
+                    activation_dict)
+                self.__topology[concept_name][NODE_FUZZY_ACTIVATION] = new_activation_dict
+                self.__topology[concept_name][NODE_FUZZY_MIN] = abs(new_activation_dict['val_list'][0])
+                activation_elements = len(new_activation_dict['val_list'])
+                self.__topology[concept_name][NODE_FUZZY_MAX] = new_activation_dict['val_list'][activation_elements - 1]
+                activation_dict = scaled_activation_dict
+            elif self._default_concept[NODE_TYPE] == self.__topology[concept_name][NODE_TYPE]:
+                self.__topology[concept_name][NODE_FUZZY_ACTIVATION] = self._default_concept[NODE_FUZZY_ACTIVATION]
+                self.__topology[concept_name][NODE_FUZZY_MIN] = self._default_concept[NODE_FUZZY_MIN]
+                self.__topology[concept_name][NODE_FUZZY_MAX] = self._default_concept[NODE_FUZZY_MAX]
 
         if use_memory is not None and type(use_memory) == bool:
             self.__topology[concept_name][NODE_USE_MEM] = use_memory
@@ -473,8 +499,8 @@ class FuzzyCognitiveMap:
         # define activation function
         self.__topology[concept_name][NODE_USE_MAP_FUNC] = False
         if activation_dict is not None:
-            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
-            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'FUZZY'
+            self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_function_by_name("fuzzy")
+            self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'fuzzy'
             self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
             vec_actv_funct_args = FuzzyCognitiveMap.__process_function_args(activation_dict)
         elif activation_function is not None:
@@ -518,16 +544,13 @@ class FuzzyCognitiveMap:
             # scale and normalize the values for fuzzy function
             # activation_dict = {'membership':[],'val_list':[]}
             if (concept_type == TYPE_FUZZY or concept_type == TYPE_REGRESOR) and activation_dict is not None:
-                self.__topology[concept_name][NODE_FUZZY_ACTIVATION] = activation_dict
-                # scale for only positive values
-                self.__topology[concept_name][NODE_FUZZY_MIN] = abs(min(activation_dict['val_list']))
-                for pos in range(len(activation_dict['val_list'])):
-                    activation_dict['val_list'][pos] += self.__topology[concept_name][NODE_FUZZY_MIN]
-                # normalize positive values
-                self.__topology[concept_name][NODE_FUZZY_MAX] = max(activation_dict['val_list'])
-                for pos in range(len(activation_dict['val_list'])):
-                    activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self.__topology[concept_name][
-                        NODE_FUZZY_MAX]
+                new_activation_dict, scaled_activation_dict = FuzzyCognitiveMap.__process_activation_dict(
+                    activation_dict)
+                self.__topology[concept_name][NODE_FUZZY_ACTIVATION] = new_activation_dict
+                self.__topology[concept_name][NODE_FUZZY_MIN] = abs(new_activation_dict['val_list'][0])
+                activation_elements = len(new_activation_dict['val_list'])
+                self.__topology[concept_name][NODE_FUZZY_MAX] = new_activation_dict['val_list'][activation_elements - 1]
+                activation_dict = scaled_activation_dict
 
             if use_memory is not None and type(use_memory) == bool:
                 self.__topology[concept_name][NODE_USE_MEM] = use_memory
@@ -537,8 +560,8 @@ class FuzzyCognitiveMap:
             # define activation function
             self.__topology[concept_name][NODE_USE_MAP_FUNC] = False
             if activation_dict is not None:
-                self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.fuzzy_set
-                self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'FUZZY'
+                self.__topology[concept_name][NODE_ACTV_FUNC] = Activation.get_function_by_name("fuzzy")
+                self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = 'fuzzy'
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = activation_dict
                 vec_actv_funct_args = FuzzyCognitiveMap.__process_function_args(activation_dict)
             elif activation_function is not None:
@@ -578,16 +601,12 @@ class FuzzyCognitiveMap:
             raise Exception("Unknown node type")
 
         if concept_type == TYPE_FUZZY or concept_type == TYPE_REGRESOR and activation_dict is not None:
-            self._default_concept[NODE_FUZZY_ACTIVATION] = activation_dict
-            # scale for only positive values
-            self._default_concept[NODE_FUZZY_MIN] = abs(min(activation_dict['val_list']))
-            for pos in range(len(activation_dict['val_list'])):
-                activation_dict['val_list'][pos] += self._default_concept[NODE_FUZZY_MIN]
-            # normalize positive values
-            self._default_concept[NODE_FUZZY_MAX] = max(activation_dict['val_list'])
-            for pos in range(len(activation_dict['val_list'])):
-                activation_dict['val_list'][pos] = activation_dict['val_list'][pos] / self._default_concept[
-                    NODE_FUZZY_MAX]
+            new_activation_dict, scaled_activation_dict = FuzzyCognitiveMap.__process_activation_dict(activation_dict)
+            self._default_concept[NODE_FUZZY_ACTIVATION] = new_activation_dict
+            self._default_concept[NODE_FUZZY_MIN] = abs(new_activation_dict['val_list'][0])
+            activation_elements = len(new_activation_dict['val_list'])
+            self._default_concept[NODE_FUZZY_MAX] = new_activation_dict['val_list'][activation_elements - 1]
+            activation_dict = scaled_activation_dict
 
         if use_memory is not None and type(use_memory) == bool:
             self._default_concept[NODE_USE_MEM] = use_memory
@@ -597,10 +616,9 @@ class FuzzyCognitiveMap:
         # define activation function
         self._default_concept[NODE_USE_MAP_FUNC] = False
         if activation_dict is not None:
-            self._default_concept[NODE_ACTV_FUNC] = Activation.fuzzy_set
-            self._default_concept[NODE_ACTV_FUNC_NAME] = 'FUZZY'
+            self._default_concept[NODE_ACTV_FUNC] = Activation.get_function_by_name("fuzzy")
+            self._default_concept[NODE_ACTV_FUNC_NAME] = 'fuzzy'
             self._default_concept[NODE_ACTV_FUNC_ARGS] = activation_dict
-            vec_actv_funct_args = FuzzyCognitiveMap.__process_function_args(activation_dict)
         elif activation_function is not None:
             actv_function = Activation.get_function_by_name(activation_function)
             if actv_function is not None:
@@ -632,8 +650,26 @@ class FuzzyCognitiveMap:
         """
         self.__prepared_data = False
         if destiny_concept in self.__topology and origin_concept in self.__topology:
-            # FIXME: NODE_ARCS usages will be deprecated
+            # TODO: NODE_ARCS usages deprecation
             self.__topology[origin_concept][NODE_ARCS].append((destiny_concept, weight))
+            self.__topology[destiny_concept][NODE_MAX_ACTV] += weight
+
+            # TODO: refactor fit inclination behavior
+            if self.fit_inclination is not None:
+                new_lambda = None
+                if self.__topology[destiny_concept][NODE_ACTV_FUNC_NAME] == "sigmoid":
+                    new_lambda = sigmoid_lambda(self.__topology[destiny_concept][NODE_MAX_ACTV],
+                                                self.fit_inclination)
+                if self.__topology[destiny_concept][NODE_ACTV_FUNC_NAME] == "sigmoid_hip":
+                    new_lambda = sigmoid_hip_lambda(self.__topology[destiny_concept][NODE_MAX_ACTV],
+                                                    self.fit_inclination)
+
+                if new_lambda is not None:
+                    new_args = {"lambda_val": new_lambda}
+                    self.__topology[destiny_concept][NODE_ACTV_FUNC_ARGS] = new_args
+                    vec_actv_func_args = FuzzyCognitiveMap.__process_function_args(new_args)
+                    self.__topology[destiny_concept][NODE_ACTV_FUNC_ARGS_VECT] = vec_actv_func_args
+
             self.__arc_list.append((destiny_concept, weight, origin_concept))
 
     def get_concept_outgoing_relations(self, concept_name):
@@ -668,8 +704,19 @@ class FuzzyCognitiveMap:
                 raise Exception("Missing concept " + concept_name)
             else:
                 return
-        self.__topology[concept_name][NODE_VALUE] = value
-        self.__execution[concept_name] = [value]
+        if self.__topology[concept_name][NODE_ACTV_FUNC_NAME] == 'fuzzy':
+            membership = self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['membership']
+            val_list = self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['val_list']
+            if type(membership) == list or type(val_list) == list:
+                membership = np.array(membership)
+                val_list = np.array(val_list)
+            fuzzy_actv_function = Activation.get_function_by_name('fuzzy')
+            actv_value = fuzzy_actv_function(value, membership=membership, val_list=val_list)
+            self.__topology[concept_name][NODE_VALUE] = actv_value
+            self.__execution[concept_name] = [actv_value]
+        else:
+            self.__topology[concept_name][NODE_VALUE] = value
+            self.__execution[concept_name] = [value]
 
     def is_stable(self):
         """
@@ -735,6 +782,9 @@ class FuzzyCognitiveMap:
                 exec_val = self.__topology[node][NODE_EXEC_FUNC](self.__topology[node])
                 # reset NODE_AUX after calculate the execution value
                 self.__topology[node][NODE_AUX].clear()  # = []
+                # normalize values for fuzzy activation nodes
+                if self.__topology[node][NODE_ACTV_FUNC_NAME] == 'fuzzy':
+                    exec_val = exec_val / self.__topology[node][NODE_MAX_ACTV]
                 result = self.__topology[node][NODE_ACTV_FUNC](exec_val, **self.__topology[node][NODE_ACTV_FUNC_ARGS])
                 # update execution values
                 self.__topology[node][NODE_VALUE] = result
@@ -748,16 +798,21 @@ class FuzzyCognitiveMap:
             self.__prepared_data = True
             self.__relation_matrix = np.zeros((len(self.__topology), len(self.__topology)), dtype=np.float64)
             self.__state_vector = np.zeros(len(self.__topology), dtype=np.float64)
-            self.__functions = []
+            self.__functions = np.zeros(len(self.__topology), dtype=np.int32)
             self.__memory_usage = []
+            self.__normalize_values = np.zeros(len(self.__topology), dtype=np.float64)
             self.__function_args = []
             self.__avoid_saturation = []
             for concept_pos in range(len(concepts)):
                 self.__state_vector[concept_pos] = self.__topology[concepts[concept_pos]][NODE_VALUE]
-                self.__functions.append(
-                    Activation.get_const_by_name(self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_NAME]))
+                self.__functions[concept_pos] = Activation.get_const_by_name(
+                    self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_NAME])
                 self.__function_args.append(self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_ARGS_VECT])
                 self.__memory_usage.append(self.__topology[concepts[concept_pos]][NODE_USE_MEM])
+                # normalize fuzzy activation input
+                if self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_NAME] == 'fuzzy':
+                    self.__normalize_values[concept_pos] = self.__topology[concepts[concept_pos]][NODE_MAX_ACTV]
+
                 if 'PAPAGEORGIUS' == self.__topology[concepts[concept_pos]][NODE_EXEC_FUNC_NAME]:
                     self.__avoid_saturation.append(True)
                 else:
@@ -771,8 +826,8 @@ class FuzzyCognitiveMap:
                 self.__relation_matrix[origin_index][dest_index] = weight
         # print(self.__relation_matrix)
         # run vectorized jit inference process
-        result = vectorized_run(self.__state_vector, self.__relation_matrix, np.array(self.__functions, dtype=np.int32),
-                                List(self.__function_args), List(self.__memory_usage),
+        result = vectorized_run(self.__state_vector, self.__relation_matrix, self.__functions,
+                                List(self.__function_args), self.__normalize_values, List(self.__memory_usage),
                                 List(self.__avoid_saturation), np.int32(self.max_iter),
                                 np.float64(self.stability_diff), np.int32(self.__extra_steps))
         self.__state_vector = result[:, 0]
@@ -896,8 +951,20 @@ class FuzzyCognitiveMap:
                 concept_desc['use_memory'] = self.__topology[concept_name][NODE_USE_MEM]
             if self.__topology[concept_name][NODE_ACTV_FUNC_NAME] != self.__activation_function:
                 concept_desc['custom_function'] = self.__topology[concept_name][NODE_ACTV_FUNC_NAME]
-                if len(self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]) > 0:
-                    concept_desc['custom_function_args'] = self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]
+                if concept_desc['custom_function'] == 'fuzzy':
+                    if type(self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['membership']) == list:
+                        concept_desc['activation_dict'] = {
+                            'membership': self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['membership'],
+                            'val_list': self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['val_list']
+                        }
+                    else:
+                        concept_desc['activation_dict'] = {
+                            'membership': self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['membership'].tolist(),
+                            'val_list': self.__topology[concept_name][NODE_FUZZY_ACTIVATION]['val_list'].tolist()
+                        }
+                else:
+                    if len(self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]) > 0:
+                        concept_desc['custom_function_args'] = self.__topology[concept_name][NODE_ACTV_FUNC_ARGS]
             result['concepts'].append(concept_desc)
 
         for relation in self.__arc_list:

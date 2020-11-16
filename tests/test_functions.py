@@ -1,9 +1,7 @@
 import unittest
-import numpy as np
 
 from tests import create_concept
-from py_fcm.__const import *
-from py_fcm.functions import Relation
+from py_fcm.functions import *
 
 
 class ExitationFunctionsTests(unittest.TestCase):
@@ -107,6 +105,12 @@ class ActivationFunctionsTests(unittest.TestCase):
         self.assertEqual(0.09999999999999998, res)
         res = test_concept[NODE_ACTV_FUNC](16, np.array([0.0, 0.5, 1.0]), np.array([5, 15, 20]))
         self.assertEqual(0.6, res)
+        res = test_concept[NODE_ACTV_FUNC](-1.0, np.array([0.25, 0.5, 1.0, 0.5, 0.25]),
+                                           np.array([0.2, 0.4, 0.6, 0.8, 1.0]))
+        self.assertEqual(-0.75, res)
+        res = test_concept[NODE_ACTV_FUNC](-0.5, np.array([0.25, 0.5, 1.0, 0.5, 0.25]),
+                                           np.array([0.2, 0.4, 0.6, 0.8, 1.0]))
+        self.assertEqual(-0.25, res)
 
 
 class RelationFunctionsTests(unittest.TestCase):
@@ -137,3 +141,12 @@ class RelationFunctionsTests(unittest.TestCase):
     def test_simple(self):
         res = Relation.simple(1, 2, 2, 1)
         self.assertEqual(0.3333333333333333, res)
+
+
+class OtherFucntionsTest(unittest.TestCase):
+    def test_dual_quick_sort(self):
+        array = np.array([2, 6, 1, 5])
+        mirror = np.array([2, 6, 1, 5])
+        dual_quick_sort(array, 0, len(array) - 1, mirror)
+        for pos in range(len(array)):
+            self.assertEqual(array[pos], mirror[pos])
