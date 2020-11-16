@@ -152,10 +152,22 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
         else:
             return -1 * (1 - membership[index])
     if index == 0:
-        next_pos = 1
+        if val_list[index] > value:
+            if not negative_activation:
+                return membership[index]
+            else:
+                return -1 * (1 - membership[index])
+        else:
+            next_pos = 1
     elif index == val_list.size - 1:
-        prev_pos = index - 1
-        next_pos = index
+        if val_list[index] < value:
+            if not negative_activation:
+                return membership[index]
+            else:
+                return -1 * (1 - membership[index])
+        else:
+            prev_pos = index - 1
+            next_pos = index
     else:
         if (value - val_list[index]) > 0:
             prev_pos = index
