@@ -213,7 +213,7 @@ def __def_num_clusters(data: np.array, max_clusters):
     return values, image, change_points
 
 
-@njit
+# @njit
 def __define_clusters(val_float_list, num_clusters, change_points, gen_init_state, strategy, max_iter, seed):
     # preparing data for clustering
     copy = np.vstack([val_float_list])
