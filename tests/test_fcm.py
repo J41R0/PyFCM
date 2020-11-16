@@ -1,6 +1,6 @@
 import unittest
 import json
-from py_fcm import FuzzyCognitiveMap, TYPE_DECISION
+from py_fcm import FuzzyCognitiveMap, TYPE_DECISION, TYPE_FUZZY, TYPE_SIMPLE
 
 
 class FuzzyCognitiveMapTests(unittest.TestCase):
@@ -372,6 +372,54 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         fcm = self.__init_complex_fcm()
         fcm.set_map_activation_function('lceq', weight=0.0001)
         fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+        fcm.debug = False
+        fcm.run_inference()
+        json_fcm = json.loads(fcm.to_json())
+        self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
+
+    def test_inference_fuzzy(self):
+        expected_json = {
+            'concepts': [{'id': 'r1', 'is_active': True, 'type': 'DECISION', 'activation': 0.4687996143920417},
+                         {'id': 'r2', 'is_active': True, 'type': 'DECISION', 'activation': 0.4625401367231719},
+                         {'id': 'c1', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.3,
+                          'custom_function': 'threestate'},
+                         {'id': 'c2', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.3,
+                          'custom_function': 'threestate'},
+                         {'id': 'c3', 'is_active': True, 'type': 'SIMPLE', 'activation': 0.3,
+                          'custom_function': 'fuzzy', 'activation_dict': {'membership': [0.25, 0.5, 1.0, 0.5, 0.25],
+                                                                          'val_list': [1.0, 2.0, 3.0, 4.0, 5.0]}}]
+        }
+
+        fcm = FuzzyCognitiveMap(activ_function='sigmoid')
+
+        fcm.add_concept('r1', TYPE_DECISION)
+        fcm.add_concept('r2', TYPE_DECISION)
+        fcm.add_concept('c1', TYPE_SIMPLE, activation_function="threestate")
+        fcm.add_concept('c2', TYPE_SIMPLE, activation_function="threestate")
+        fcm.add_concept('c3', TYPE_FUZZY, activation_dict={
+            'membership': [0.25, 0.5, 1.0, 0.5, 0.25],
+            'val_list': [1, 2, 3, 4, 5]
+        })
+
+        fcm.add_relation('c3', 'r1', 0.5)
+        fcm.add_relation('c3', 'r2', 0.5)
+
+        fcm.add_relation('r1', 'c1', 1.0)
+        fcm.add_relation('r2', 'c2', 1.0)
+
+        fcm.add_relation('c1', 'c3', 0.7)
+        fcm.add_relation('c1', 'r2', -0.3)
+
+        fcm.add_relation('c2', 'c3', 0.8)
+        fcm.add_relation('c2', 'r1', -0.2)
+
+        fcm.init_concept('c1', -1.0)
+        fcm.init_concept('c2', -1.0)
+
+        fcm.run_inference()
+
         json_fcm = json.loads(fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
         fcm.debug = False
