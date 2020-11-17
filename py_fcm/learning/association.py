@@ -1,9 +1,9 @@
 from pandas import DataFrame
 
-from py_fcm.__const import *
+from py_fcm.utils.__const import *
 from py_fcm.learning.utils import *
 from py_fcm import FuzzyCognitiveMap
-from py_fcm.functions import Relation
+from py_fcm.utils.functions import Relation
 from py_fcm.learning.cmeans_discretization import fuzzy_feature_discretization
 
 # USED CONST DEFINITION
@@ -57,8 +57,7 @@ class AssociationBasedFCM:
             fun_args = {'membership': memberships[curr_cluster],
                         'val_list': val_list}
             self.__fcm.add_concept(concept_name, self.__features[feat_name][TYPE], is_active=True,
-                                   use_memory=self.__use_memory, activation_function='fuzzy',
-                                   activation_dict=fun_args)
+                                   use_memory=self.__use_memory, activation_dict=fun_args)
 
         self.__features[feat_name][CONCEPT_NAMES] = names
         self.__features[feat_name][CONCEPT_DESC] = ([i for i in range(n_clusters)], memberships)
