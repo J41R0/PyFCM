@@ -1,2 +1,2 @@
-from py_fcm.fcm import FuzzyCognitiveMap, from_json, join_maps
-from py_fcm.__const import TYPE_SIMPLE, TYPE_DECISION, TYPE_FUZZY
+from py_fcm.loader import from_json, join_maps, FuzzyCognitiveMap
+from py_fcm.utils.__const import TYPE_SIMPLE, TYPE_DECISION, TYPE_FUZZY
