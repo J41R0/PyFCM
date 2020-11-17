@@ -57,4 +57,15 @@ class FcmEstimator:
         return DataFrame(result)
 
     def score(self, x: DataFrame, y: DataFrame):
-        pass
+        if self.__is_fcm_generated:
+            predicted_result = self.predict(x)
+            right_predicted = 0
+            total = 0
+            for feat_name in y.columns:
+                for i in range(len(y)):
+                    total += 1
+                    if y.loc[i, feat_name] == predicted_result.loc[i, feat_name]:
+                        right_predicted += 1
+            return right_predicted / total
+        else:
+            raise Exception("There is no FCM generated, the fit method mus be called first")
