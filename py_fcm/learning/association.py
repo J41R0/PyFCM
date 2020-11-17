@@ -43,11 +43,10 @@ class AssociationBasedFCM:
         if fit_inclination:
             self.__fcm.fit_inclination = 0.975
 
-    @staticmethod
-    def __name_discrete_concept(value, feat_name, str_separator):
-        return str(value) + str(str_separator) + str(feat_name)
+    def __name_concept(self, feat_name, value):
+        return str(value) + str(self.__str_separator) + str(feat_name)
 
-    def __gen_continuous_concepts(self, feat_name, str_separator, target_feats):
+    def __gen_continuous_concepts(self, feat_name, target_feats):
         if feat_name in target_feats:
             self.__features[feat_name][TYPE] = TYPE_REGRESOR
         else:
@@ -56,7 +55,7 @@ class AssociationBasedFCM:
         n_clusters, val_list, memberships = fuzzy_feature_discretization(self.__features[feat_name][NP_ARRAY_DATA])
         names = []
         for curr_cluster in range(n_clusters):
-            concept_name = str(curr_cluster) + str_separator + feat_name
+            concept_name = self.__name_concept(feat_name, curr_cluster)
             names.append(concept_name)
             fun_args = {'membership': memberships[curr_cluster],
                         'val_list': val_list}
@@ -66,7 +65,7 @@ class AssociationBasedFCM:
         self.__features[feat_name][CONCEPT_NAMES] = names
         self.__features[feat_name][CONCEPT_DESC] = ([i for i in range(n_clusters)], memberships)
 
-    def __gen_discrete_concepts(self, feat_name, str_separator, target_feats, uniques_data=None):
+    def __gen_discrete_concepts(self, feat_name, target_feats, uniques_data=None):
         if feat_name in target_feats:
             self.__features[feat_name][TYPE] = TYPE_DECISION
         else:
@@ -77,10 +76,9 @@ class AssociationBasedFCM:
 
         feat_matrix = gen_discrete_feature_matrix(self.__features[feat_name][NP_ARRAY_DATA], uniques_data[UNIQUE_ARRAY])
 
-        def_concept_name = AssociationBasedFCM.__name_discrete_concept
         names = []
         for val_pos in range(uniques_data[UNIQUE_ARRAY].size):
-            name = def_concept_name(uniques_data[UNIQUE_ARRAY][val_pos], feat_name, str_separator)
+            name = self.__name_concept(feat_name, uniques_data[UNIQUE_ARRAY][val_pos])
             names.append(name)
             self.__fcm.add_concept(name, self.__features[feat_name][TYPE], is_active=True)
         self.__features[feat_name][CONCEPT_NAMES] = names
@@ -147,19 +145,19 @@ class AssociationBasedFCM:
             self.__features[feat_name] = {NP_ARRAY_DATA: np.array(dataset.loc[:, feat_name].values)}
             # discrete features
             if self.__features[feat_name][NP_ARRAY_DATA].dtype == np.object:
-                self.__gen_discrete_concepts(feat_name, self.__str_separator, target_features)
+                self.__gen_discrete_concepts(feat_name, target_features)
 
             # continuous feature
             elif self.__features[feat_name][NP_ARRAY_DATA].dtype == np.float64:
-                self.__gen_continuous_concepts(feat_name, self.__str_separator, target_features)
+                self.__gen_continuous_concepts(feat_name, target_features)
 
             else:
                 uniques_data = np.unique(self.__features[feat_name][NP_ARRAY_DATA], return_counts=True)
                 # frequency based node type inference
                 if (uniques_data[UNIQUE_ARRAY].size / self.__features[feat_name][NP_ARRAY_DATA].size) < 0.15:
-                    self.__gen_discrete_concepts(feat_name, self.__str_separator, target_features, uniques_data)
+                    self.__gen_discrete_concepts(feat_name, target_features, uniques_data)
                 else:
-                    self.__gen_continuous_concepts(feat_name, self.__str_separator, target_features)
+                    self.__gen_continuous_concepts(feat_name, target_features)
 
             self.__def_feat_relations(feat_name)
 
