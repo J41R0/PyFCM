@@ -24,20 +24,26 @@ Q_P_COEFF = 1
 
 
 class AssociationBasedFCM:
-    def __init__(self):
+    def __init__(self, str_separator="___", use_memory=False, fit_inclination=False, exclusion_val=-1,
+                 causality_function=Relation.conf, causal_eval_function=Relation.conf, causal_threshold=0,
+                 sign_function=None, sign_threshold=0):
         self.__features = {}
-        self.__relations = []
-        self.__fcm = FuzzyCognitiveMap()
         self.__processed_features = set()
 
         # vars
-        self.__exclusion_val = -1
-        self.__use_memory = False
-        self.__causality_value_function = Relation.conf
-        self.__causality_evaluation_function = Relation.conf
-        self.__causal_threshold = -1
-        self.__sign_function = None
-        self.__sign_function_cut_val = 0
+        self.__fcm = FuzzyCognitiveMap()
+        self.__processed_features = set()
+        self.__exclusion_val = exclusion_val
+        self.__use_memory = use_memory
+        self.__causality_value_function = causality_function
+        self.__causality_evaluation_function = causal_eval_function
+        self.__causal_threshold = causal_threshold
+        self.__sign_function = sign_function
+        self.__sign_function_cut_val = sign_threshold
+        self.__str_separator = str_separator
+
+        if fit_inclination:
+            self.__fcm.fit_inclination = 0.975
 
     @staticmethod
     def __name_discrete_concept(value, feat_name, str_separator):
@@ -131,45 +137,32 @@ class AssociationBasedFCM:
 
         self.__processed_features.add(feat_name)
 
-    def gen_fcm(self, dataset: DataFrame, target_features=None, fcm=None, str_separator="___", use_memory=False,
-                fit_inclination=False, exclusion_val=-1, causality_function=Relation.conf,
-                causal_eval_function=Relation.conf, causal_threshold=0,
-                sign_function=None, sign_threshold=0) -> FuzzyCognitiveMap:
-
+    def build_fcm(self, dataset: DataFrame, target_features=None, fcm=None) -> FuzzyCognitiveMap:
         # TODO: handle features multivalued and with missing values
-        self.__processed_features = set()
-        self.__exclusion_val = exclusion_val
-        self.__use_memory = use_memory
-        self.__causality_value_function = causality_function
-        self.__causality_evaluation_function = causal_eval_function
-        self.__causal_threshold = causal_threshold
-        self.__sign_function = sign_function
-        self.__sign_function_cut_val = sign_threshold
-
-        if target_features is None:
-            target_features = set()
         if fcm is not None and type(fcm) == FuzzyCognitiveMap:
             self.__fcm = fcm
-        if fit_inclination:
-            self.__fcm.fit_inclination = 0.975
+        else:
+            self.__fcm = FuzzyCognitiveMap()
+        if target_features is None:
+            target_features = set()
         # define map concepts
         for feat_name in dataset.loc[:, ]:
             self.__features[feat_name] = {NP_ARRAY_DATA: np.array(dataset.loc[:, feat_name].values)}
             # discrete features
             if self.__features[feat_name][NP_ARRAY_DATA].dtype == np.object:
-                self.__gen_discrete_concepts(feat_name, str_separator, target_features)
+                self.__gen_discrete_concepts(feat_name, self.__str_separator, target_features)
 
             # continuous feature
             elif self.__features[feat_name][NP_ARRAY_DATA].dtype == np.float64:
-                self.__gen_continuous_concepts(feat_name, str_separator, target_features)
+                self.__gen_continuous_concepts(feat_name, self.__str_separator, target_features)
 
             else:
                 uniques_data = np.unique(self.__features[feat_name][NP_ARRAY_DATA], return_counts=True)
                 # frequency based node type inference
                 if (uniques_data[UNIQUE_ARRAY].size / self.__features[feat_name][NP_ARRAY_DATA].size) < 0.15:
-                    self.__gen_discrete_concepts(feat_name, str_separator, target_features, uniques_data)
+                    self.__gen_discrete_concepts(feat_name, self.__str_separator, target_features, uniques_data)
                 else:
-                    self.__gen_continuous_concepts(feat_name, str_separator, target_features)
+                    self.__gen_continuous_concepts(feat_name, self.__str_separator, target_features)
 
             self.__def_feat_relations(feat_name)
 

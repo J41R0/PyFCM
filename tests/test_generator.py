@@ -17,7 +17,7 @@ class GeneratorTests(unittest.TestCase):
         ]
 
         my_ds = pd.DataFrame(test_input, columns=['f1', 'f2', 'f3', 'class'])
-        generated_fcm = generator.gen_fcm(my_ds, target_features=['class'])
+        generated_fcm = generator.build_fcm(my_ds, target_features=['class'])
         return generated_fcm
 
     def test_association_generator_concepts(self):
