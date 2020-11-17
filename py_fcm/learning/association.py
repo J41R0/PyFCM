@@ -33,10 +33,9 @@ class AssociationBasedFCM:
         # vars
         self.__exclusion_val = -1
         self.__use_memory = False
-        self.__min_conf = -1
         self.__causality_value_function = Relation.conf
         self.__causality_evaluation_function = Relation.conf
-        self.__causal_threshold = 0
+        self.__causal_threshold = -1
         self.__sign_function = None
         self.__sign_function_cut_val = 0
 
@@ -102,7 +101,7 @@ class AssociationBasedFCM:
         for other_feat in self.__processed_features:
             for concept_p_pos in range(len(self.__features[feat_name][CONCEPT_NAMES])):
                 for concept_q_pos in range(len(self.__features[other_feat][CONCEPT_NAMES])):
-                    res = calc_concepts_coefficient(
+                    relation_coefficients = calc_concepts_coefficient(
                         self.__features[feat_name][CONCEPT_DESC][FEATURE_DESC][concept_p_pos],
                         self.__features[other_feat][CONCEPT_DESC][FEATURE_DESC][concept_q_pos]
                     )
@@ -110,23 +109,23 @@ class AssociationBasedFCM:
                     sign_p_q = 1
                     sign_q_p = 1
                     if self.__sign_function is not None:
-                        if self.__sign_function_cut_val > self.__sign_function(*res[P_Q_COEFF]):
+                        if self.__sign_function_cut_val > self.__sign_function(*relation_coefficients[P_Q_COEFF]):
                             sign_p_q = -1
-                        if self.__sign_function_cut_val > self.__sign_function(*res[Q_P_COEFF]):
+                        if self.__sign_function_cut_val > self.__sign_function(*relation_coefficients[Q_P_COEFF]):
                             sign_q_p = -1
 
                     # define causality degree p -> q
-                    causality_p_q = self.__causality_evaluation_function(*res[P_Q_COEFF])
+                    causality_p_q = self.__causality_evaluation_function(*relation_coefficients[P_Q_COEFF])
                     if causality_p_q > self.__causal_threshold:
-                        relation_weight = sign_p_q * self.__causality_value_function(*res[P_Q_COEFF])
+                        relation_weight = sign_p_q * self.__causality_value_function(*relation_coefficients[P_Q_COEFF])
                         self.__fcm.add_relation(self.__features[feat_name][CONCEPT_NAMES][concept_p_pos],
                                                 self.__features[other_feat][CONCEPT_NAMES][concept_q_pos],
                                                 relation_weight)
 
                     # define causality degree q -> p
-                    causality_q_p = self.__causality_evaluation_function(*res[Q_P_COEFF])
+                    causality_q_p = self.__causality_evaluation_function(*relation_coefficients[Q_P_COEFF])
                     if causality_q_p > self.__causal_threshold:
-                        relation_weight = sign_q_p * self.__causality_value_function(*res[Q_P_COEFF])
+                        relation_weight = sign_q_p * self.__causality_value_function(*relation_coefficients[Q_P_COEFF])
                         self.__fcm.add_relation(self.__features[other_feat][CONCEPT_NAMES][concept_q_pos],
                                                 self.__features[feat_name][CONCEPT_NAMES][concept_p_pos],
                                                 relation_weight)
@@ -142,7 +141,6 @@ class AssociationBasedFCM:
         self.__processed_features = set()
         self.__exclusion_val = exclusion_val
         self.__use_memory = use_memory
-        self.__min_conf = min_conf
         self.__causality_value_function = causality_function
         self.__causality_evaluation_function = causal_eval_function
         self.__causal_threshold = causal_threshold
