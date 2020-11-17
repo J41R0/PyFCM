@@ -132,9 +132,9 @@ class AssociationBasedFCM:
 
         self.__processed_features.add(feat_name)
 
-    def gen_fcm(self, dataset: pd.DataFrame, target_features=None, fcm=None, str_separator="___",
-                use_memory=False, fit_inclination=False, exclusion_val=-1, min_conf=0,
-                causality_function=Relation.conf, causal_eval_function=Relation.conf, causal_threshold=0,
+    def gen_fcm(self, dataset: pd.DataFrame, target_features=None, fcm=None, str_separator="___", use_memory=False,
+                fit_inclination=False, exclusion_val=-1, causality_function=Relation.conf,
+                causal_eval_function=Relation.conf, causal_threshold=0,
                 sign_function=None, sign_threshold=0) -> FuzzyCognitiveMap:
 
         # TODO: handle features multivalued and with missing values
