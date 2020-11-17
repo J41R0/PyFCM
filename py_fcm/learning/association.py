@@ -162,3 +162,18 @@ class AssociationBasedFCM:
             self.__def_feat_relations(feat_name)
 
         return self.__fcm
+
+    def get_concept_initialization(self, feat_name, value):
+        concept_name = []
+        init_value = []
+        try:
+            if self.__features[feat_name][TYPE] == TYPE_FUZZY or self.__features[feat_name][TYPE] == TYPE_REGRESOR:
+                for concept in self.__features[feat_name][CONCEPT_NAMES]:
+                    concept_name.append(concept)
+                    init_value.append(value)
+            else:
+                concept_name.append(self.__name_concept(feat_name, value))
+                init_value.append(1)
+        except Exception:
+            raise Exception("Cannot init concept")
+        return concept_name, init_value
