@@ -1,7 +1,7 @@
 import unittest
 
 from tests import create_concept
-from py_fcm.functions import *
+from py_fcm.utils.functions import *
 
 
 class ExitationFunctionsTests(unittest.TestCase):

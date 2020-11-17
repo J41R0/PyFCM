@@ -5,7 +5,7 @@ import numpy as np
 from numba.typed import List
 from numba import njit
 
-from py_fcm.__const import *
+from py_fcm.utils.__const import *
 
 
 @njit

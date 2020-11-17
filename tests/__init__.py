@@ -1,5 +1,5 @@
 from py_fcm.utils.__const import *
-from py_fcm.functions import Excitation, Activation
+from py_fcm.utils.functions import Excitation, Activation
 
 
 def create_concept(node_type=TYPE_SIMPLE, is_active=True, use_memory=True,
