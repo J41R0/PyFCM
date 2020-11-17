@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from pandas import DataFrame
 
 from py_fcm.utils.__const import *
@@ -172,3 +174,36 @@ class AssociationBasedFCM:
                 self.__fcm.init_concept(self.__name_concept(feat_name, value), 1, required_presence=False)
         except Exception:
             raise Exception("Cannot init concept")
+
+    def __get_feature_and_info(self, concept: str):
+        res = concept.split(self.__str_separator)
+        return res[1], res[0]
+
+    def __get_discrete_feat_result(self, fcm_results):
+        result = {}
+        for feat_name in fcm_results:
+            max = -1
+            res_pos = 0
+            curr_pos = 0
+            for value, output in fcm_results[feat_name]:
+                if output > max:
+                    max = output
+                    res_pos = curr_pos
+                curr_pos += 1
+            result[feat_name] = fcm_results[feat_name][res_pos][0]
+        return fcm_results
+
+    def get_inference_result(self):
+        self.__fcm.run_inference()
+        fcm_result = self.__fcm.get_final_state()
+        cont_res_feat = defaultdict(list)
+        disc_res_feat = defaultdict(list)
+        for concept in fcm_result:
+            feat_name, info = self.__get_feature_and_info(concept)
+            if self.__features[feat_name][TYPE] == TYPE_FUZZY or self.__features[feat_name][TYPE] == TYPE_REGRESOR:
+                cont_res_feat[feat_name].append((info, fcm_result[concept]))
+            else:
+                disc_res_feat[feat_name].append((info, fcm_result[concept]))
+
+        # TODO: handle continuous features output for regression problems
+        return self.__get_discrete_feat_result(disc_res_feat)
