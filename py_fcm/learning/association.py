@@ -24,9 +24,8 @@ Q_P_COEFF = 1
 
 
 class AssociationBasedFCM:
-    def __init__(self, str_separator="___", use_memory=False, fit_inclination=False, exclusion_val=-1,
-                 causality_function=Relation.conf, causal_eval_function=Relation.conf, causal_threshold=0,
-                 sign_function=None, sign_threshold=0):
+    def __init__(self, str_separator="___", fit_inclination=False, exclusion_val=-1, causality_function=Relation.conf,
+                 causal_eval_function=Relation.conf, causal_threshold=0, sign_function=None, sign_threshold=0):
         self.__features = {}
         self.__processed_features = set()
 
@@ -34,7 +33,6 @@ class AssociationBasedFCM:
         self.__fcm = FuzzyCognitiveMap()
         self.__processed_features = set()
         self.__exclusion_val = exclusion_val
-        self.__use_memory = use_memory
         self.__causality_value_function = causality_function
         self.__causality_evaluation_function = causal_eval_function
         self.__causal_threshold = causal_threshold
@@ -63,7 +61,7 @@ class AssociationBasedFCM:
             fun_args = {'membership': memberships[curr_cluster],
                         'val_list': val_list}
             self.__fcm.add_concept(concept_name, self.__features[feat_name][TYPE], is_active=True,
-                                   use_memory=self.__use_memory, activation_dict=fun_args)
+                                   activation_dict=fun_args)
 
         self.__features[feat_name][CONCEPT_NAMES] = names
         self.__features[feat_name][CONCEPT_DESC] = ([i for i in range(n_clusters)], memberships)
@@ -84,8 +82,7 @@ class AssociationBasedFCM:
         for val_pos in range(uniques_data[UNIQUE_ARRAY].size):
             name = def_concept_name(uniques_data[UNIQUE_ARRAY][val_pos], feat_name, str_separator)
             names.append(name)
-            self.__fcm.add_concept(name, self.__features[feat_name][TYPE],
-                                   is_active=True, use_memory=self.__use_memory)
+            self.__fcm.add_concept(name, self.__features[feat_name][TYPE], is_active=True)
         self.__features[feat_name][CONCEPT_NAMES] = names
         self.__features[feat_name][CONCEPT_DESC] = (uniques_data[UNIQUE_ARRAY], feat_matrix)
 
