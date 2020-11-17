@@ -179,19 +179,20 @@ class AssociationBasedFCM:
         res = concept.split(self.__str_separator)
         return res[1], res[0]
 
-    def __get_discrete_feat_result(self, fcm_results):
-        result = {}
+    def __get_discrete_feature_result(self, fcm_results):
+        final_result = {}
         for feat_name in fcm_results:
-            max = -1
+            max_actv = -1
             res_pos = 0
             curr_pos = 0
             for value, output in fcm_results[feat_name]:
-                if output > max:
-                    max = output
+                if output > max_actv:
+                    max_actv = output
                     res_pos = curr_pos
                 curr_pos += 1
-            result[feat_name] = fcm_results[feat_name][res_pos][0]
-        return fcm_results
+            # return result with highest activation
+            final_result[feat_name] = fcm_results[feat_name][res_pos][0]
+        return final_result
 
     def get_inference_result(self):
         self.__fcm.run_inference()
@@ -206,4 +207,4 @@ class AssociationBasedFCM:
                 disc_res_feat[feat_name].append((info, fcm_result[concept]))
 
         # TODO: handle continuous features output for regression problems
-        return self.__get_discrete_feat_result(disc_res_feat)
+        return self.__get_discrete_feature_result(disc_res_feat)
