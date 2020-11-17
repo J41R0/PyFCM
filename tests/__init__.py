@@ -1,4 +1,4 @@
-from py_fcm.__const import *
+from py_fcm.utils.__const import *
 from py_fcm.functions import Excitation, Activation
 
 
