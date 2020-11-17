@@ -451,7 +451,7 @@ class FuzzyCognitiveMap:
         * "fuzzy" : fuzzy set activation, is set when is a fuzzy node type and an activation_dict are provided
         """
         self.__prepared_data = False
-        self.__topology[concept_name] = {NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0, NODE_MAX_ACTV: 0.0}
+        self.__topology[concept_name] = {NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0, NODE_ACTV_SUM: 0.0}
 
         if is_active is not None and type(is_active) == bool:
             self.__topology[concept_name][NODE_ACTIVE] = is_active
@@ -652,16 +652,16 @@ class FuzzyCognitiveMap:
         if destiny_concept in self.__topology and origin_concept in self.__topology:
             # TODO: NODE_ARCS usages deprecation
             self.__topology[origin_concept][NODE_ARCS].append((destiny_concept, weight))
-            self.__topology[destiny_concept][NODE_MAX_ACTV] += weight
+            self.__topology[destiny_concept][NODE_ACTV_SUM] += weight
 
             # TODO: refactor fit inclination behavior
             if self.fit_inclination is not None:
                 new_lambda = None
                 if self.__topology[destiny_concept][NODE_ACTV_FUNC_NAME] == "sigmoid":
-                    new_lambda = sigmoid_lambda(self.__topology[destiny_concept][NODE_MAX_ACTV],
+                    new_lambda = sigmoid_lambda(abs(self.__topology[destiny_concept][NODE_ACTV_SUM]),
                                                 self.fit_inclination)
                 if self.__topology[destiny_concept][NODE_ACTV_FUNC_NAME] == "sigmoid_hip":
-                    new_lambda = sigmoid_hip_lambda(self.__topology[destiny_concept][NODE_MAX_ACTV],
+                    new_lambda = sigmoid_hip_lambda(abs(self.__topology[destiny_concept][NODE_ACTV_SUM]),
                                                     self.fit_inclination)
 
                 if new_lambda is not None:
@@ -784,7 +784,7 @@ class FuzzyCognitiveMap:
                 self.__topology[node][NODE_AUX].clear()  # = []
                 # normalize values for fuzzy activation nodes
                 if self.__topology[node][NODE_ACTV_FUNC_NAME] == 'fuzzy':
-                    exec_val = exec_val / self.__topology[node][NODE_MAX_ACTV]
+                    exec_val = exec_val / self.__topology[node][NODE_ACTV_SUM]
                 result = self.__topology[node][NODE_ACTV_FUNC](exec_val, **self.__topology[node][NODE_ACTV_FUNC_ARGS])
                 # update execution values
                 self.__topology[node][NODE_VALUE] = result
@@ -811,7 +811,7 @@ class FuzzyCognitiveMap:
                 self.__memory_usage.append(self.__topology[concepts[concept_pos]][NODE_USE_MEM])
                 # normalize fuzzy activation input
                 if self.__topology[concepts[concept_pos]][NODE_ACTV_FUNC_NAME] == 'fuzzy':
-                    self.__normalize_values[concept_pos] = self.__topology[concepts[concept_pos]][NODE_MAX_ACTV]
+                    self.__normalize_values[concept_pos] = self.__topology[concepts[concept_pos]][NODE_ACTV_SUM]
 
                 if 'PAPAGEORGIUS' == self.__topology[concepts[concept_pos]][NODE_EXEC_FUNC_NAME]:
                     self.__avoid_saturation.append(True)
