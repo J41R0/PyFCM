@@ -449,6 +449,7 @@ class FuzzyCognitiveMap:
         else:
             self.__topology[concept_name][NODE_VALUE] = value
             self.__execution[concept_name] = [value]
+        self.__topology[concept_name][NODE_AUX] = []
 
     def is_stable(self):
         """
