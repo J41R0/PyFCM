@@ -11,7 +11,7 @@ class FcmEstimator:
     def __init__(self, fcm_max_it=250, fcm_extra_steps=5, fcm_stability_diff=0.001, fcm_decision_function="MEAN",
                  fcm_excitation_function='KOSKO', fcm_mem_influence=False, concept_exclusion_val=-1,
                  concept_str_separator="___", fit_inclination=False, causal_eval_function=Relation.conf,
-                 causal_threshold=0, causality_function=Relation.conf, causal_sign_function=None,
+                 causal_threshold=0.01, causality_function=Relation.pos_inf, causal_sign_function=None,
                  causal_sign_threshold=0, fcm_activation_function="sigmoid_hip", **kwargs):
         self.__is_fcm_generated = False
         # init FCM
@@ -95,3 +95,6 @@ class FcmEstimator:
             return right_predicted / total
         else:
             raise Exception("There is no FCM generated, the fit method mus be called first")
+
+    def get_fcm(self):
+        return self.__fcm
