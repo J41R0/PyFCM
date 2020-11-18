@@ -4,7 +4,7 @@ from pandas import DataFrame
 
 from py_fcm.utils.__const import *
 from py_fcm.learning.utils import *
-from py_fcm import FuzzyCognitiveMap
+from py_fcm.fcm import FuzzyCognitiveMap
 from py_fcm.utils.functions import Relation
 from py_fcm.learning.cmeans_discretization import fuzzy_feature_discretization
 
@@ -20,7 +20,7 @@ FEATURE_DESC = 1
 # np unique output consts
 UNIQUE_ARRAY = 0
 
-# coeff calc output
+# coefficient calc output
 P_Q_COEFF = 0
 Q_P_COEFF = 1
 
@@ -191,7 +191,10 @@ class AssociationBasedFCM:
                     res_pos = curr_pos
                 curr_pos += 1
             # return result with highest activation
-            final_result[feat_name] = fcm_results[feat_name][res_pos][0]
+            result = fcm_results[feat_name][res_pos][0]
+            if result.isnumeric():
+                result = int(result)
+            final_result[feat_name] = result
         return final_result
 
     def get_inference_result(self):
