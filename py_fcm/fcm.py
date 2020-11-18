@@ -185,6 +185,7 @@ class FuzzyCognitiveMap:
         self.__prepared_data = False
         self.__topology[concept_name] = {NODE_ARCS: [], NODE_AUX: [], NODE_VALUE: 0.0, NODE_ACTV_SUM: 0.0}
 
+        # TODO: reduce duplicated code
         if is_active is not None and type(is_active) == bool:
             self.__topology[concept_name][NODE_ACTIVE] = is_active
         else:
@@ -674,6 +675,10 @@ class FuzzyCognitiveMap:
             type_name = 'SIMPLE'
             if self.__topology[concept_name][NODE_TYPE] == TYPE_DECISION:
                 type_name = 'DECISION'
+            if self.__topology[concept_name][NODE_TYPE] == TYPE_FUZZY:
+                type_name = 'FUZZY'
+            if self.__topology[concept_name][NODE_TYPE] == TYPE_REGRESOR:
+                type_name = 'REGRESSION'
             concept_desc = {
                 'id': concept_name,
                 'is_active': self.__topology[concept_name][NODE_ACTIVE],
