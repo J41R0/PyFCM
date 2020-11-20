@@ -235,7 +235,7 @@ def __define_clusters(val_float_list, num_clusters, change_points, gen_init_stat
 
 
 def fuzzy_feature_discretization(val_list, max_clusters=7, gen_init_state=True, max_iter=500, seed=None,
-                                 strategy="fuzzy", plot=False, att_name=None, plot_path="."):
+                                 strategy="fuzzy", plot=False, att_name=None, plot_dir="."):
     """
       Estimate fuzzy clusters that define a continuous feature. Propose the amount of clusters to be used and return the
      membership degree of each provided point using fuzzy cmeans algorithm as kernel
@@ -249,7 +249,7 @@ def fuzzy_feature_discretization(val_list, max_clusters=7, gen_init_state=True, 
         strategy:
         plot:
         att_name:
-        plot_path:
+        plot_dir:
 
     Returns: Membership dict of each provided value to each cluster. e.g. {'1.3':[0.01,0.57,0.23]}
 
@@ -310,7 +310,7 @@ def fuzzy_feature_discretization(val_list, max_clusters=7, gen_init_state=True, 
             pass
         # show plotted values
         if att_name is not None:
-            plt.savefig(plot_path + '/' + att_name + '.png')
+            plt.savefig(plot_dir + '/' + att_name + '.png')
         plt.close()
 
     return num_clusters, sorted_input_values, clusters_description
