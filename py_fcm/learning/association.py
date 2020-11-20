@@ -103,36 +103,41 @@ class AssociationBasedFCM:
     def __def_feat_relations(self, feat_name):
         self.__def_inner_feat_relations(feat_name)
         for other_feat in self.__processed_features:
-            for concept_p_pos in range(len(self.__features[feat_name][CONCEPT_NAMES])):
-                for concept_q_pos in range(len(self.__features[other_feat][CONCEPT_NAMES])):
-                    relation_coefficients = calc_concepts_coefficient(
-                        self.__features[feat_name][CONCEPT_DESC][FEATURE_DESC][concept_p_pos],
-                        self.__features[other_feat][CONCEPT_DESC][FEATURE_DESC][concept_q_pos]
-                    )
-                    # define relation sign
-                    sign_p_q = 1
-                    sign_q_p = 1
-                    if self.__sign_function is not None:
-                        if self.__sign_function_cut_val > self.__sign_function(*relation_coefficients[P_Q_COEFF]):
-                            sign_p_q = -1
-                        if self.__sign_function_cut_val > self.__sign_function(*relation_coefficients[Q_P_COEFF]):
-                            sign_q_p = -1
+            if other_feat != feat_name:
+                for concept_p_pos in range(len(self.__features[feat_name][CONCEPT_NAMES])):
+                    for concept_q_pos in range(len(self.__features[other_feat][CONCEPT_NAMES])):
+                        relation_coefficients = calc_concepts_coefficient(
+                            self.__features[feat_name][CONCEPT_DESC][FEATURE_DESC][concept_p_pos],
+                            self.__features[other_feat][CONCEPT_DESC][FEATURE_DESC][concept_q_pos]
+                        )
+                        if relation_coefficients is None:
+                            raise Exception("Invalid relation input data")
+                        # define relation sign
+                        sign_p_q = 1
+                        sign_q_p = 1
+                        if self.__sign_function is not None:
+                            if self.__sign_function_cut_val > self.__sign_function(*relation_coefficients[P_Q_COEFF]):
+                                sign_p_q = -1
+                            if self.__sign_function_cut_val > self.__sign_function(*relation_coefficients[Q_P_COEFF]):
+                                sign_q_p = -1
 
-                    # define causality degree p -> q
-                    causality_p_q = self.__causality_evaluation_function(*relation_coefficients[P_Q_COEFF])
-                    if causality_p_q > self.__causal_threshold:
-                        relation_weight = sign_p_q * self.__causality_value_function(*relation_coefficients[P_Q_COEFF])
-                        self.__fcm.add_relation(self.__features[feat_name][CONCEPT_NAMES][concept_p_pos],
-                                                self.__features[other_feat][CONCEPT_NAMES][concept_q_pos],
-                                                relation_weight)
+                        # define causality degree p -> q
+                        causality_p_q = self.__causality_evaluation_function(*relation_coefficients[P_Q_COEFF])
+                        if causality_p_q > self.__causal_threshold:
+                            relation_weight = sign_p_q * self.__causality_value_function(
+                                *relation_coefficients[P_Q_COEFF])
+                            self.__fcm.add_relation(self.__features[feat_name][CONCEPT_NAMES][concept_p_pos],
+                                                    self.__features[other_feat][CONCEPT_NAMES][concept_q_pos],
+                                                    relation_weight)
 
-                    # define causality degree q -> p
-                    causality_q_p = self.__causality_evaluation_function(*relation_coefficients[Q_P_COEFF])
-                    if causality_q_p > self.__causal_threshold:
-                        relation_weight = sign_q_p * self.__causality_value_function(*relation_coefficients[Q_P_COEFF])
-                        self.__fcm.add_relation(self.__features[other_feat][CONCEPT_NAMES][concept_q_pos],
-                                                self.__features[feat_name][CONCEPT_NAMES][concept_p_pos],
-                                                relation_weight)
+                        # define causality degree q -> p
+                        causality_q_p = self.__causality_evaluation_function(*relation_coefficients[Q_P_COEFF])
+                        if causality_q_p > self.__causal_threshold:
+                            relation_weight = sign_q_p * self.__causality_value_function(
+                                *relation_coefficients[Q_P_COEFF])
+                            self.__fcm.add_relation(self.__features[other_feat][CONCEPT_NAMES][concept_q_pos],
+                                                    self.__features[feat_name][CONCEPT_NAMES][concept_p_pos],
+                                                    relation_weight)
 
         self.__processed_features.add(feat_name)
 
