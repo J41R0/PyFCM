@@ -16,17 +16,18 @@ def gen_discrete_feature_matrix(val_list, unique_values):
 
 @njit
 def calc_concepts_coefficient(array1: np.array, array2: np.array):
-    a_b = 0
-    na_b = 0
-    a_nb = 0
-    na_nb = 0
-    for val_pos in range(len(array1)):
-        a_b += array1[val_pos] * array2[val_pos]
-        a_nb += array1[val_pos] * (1 - array2[val_pos])
-        na_b += (1 - array1[val_pos]) * array2[val_pos]
-        na_nb += (1 - array1[val_pos]) * (1 - array2[val_pos])
-    # return: a->b relation coefficients, b->a relation coefficients
-    return (a_b, a_nb, na_b, na_nb), (a_b, na_b, a_nb, na_nb)
+    if len(array1) == len(array2):
+        a_b = 0
+        na_b = 0
+        a_nb = 0
+        na_nb = 0
+        for val_pos in range(len(array1)):
+            a_b += array1[val_pos] * array2[val_pos]
+            a_nb += array1[val_pos] * (1 - array2[val_pos])
+            na_b += (1 - array1[val_pos]) * array2[val_pos]
+            na_nb += (1 - array1[val_pos]) * (1 - array2[val_pos])
+        # return: a->b relation coefficients, b->a relation coefficients
+        return (a_b, a_nb, na_b, na_nb), (a_b, na_b, a_nb, na_nb)
 
 
 @njit
