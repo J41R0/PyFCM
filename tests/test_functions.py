@@ -100,7 +100,7 @@ class ActivationFunctionsTests(unittest.TestCase):
         res = test_concept[NODE_ACTV_FUNC](4, np.array([0.0, 1.0]), np.array([5, 15]))
         self.assertEqual(0.0, res)
         res = test_concept[NODE_ACTV_FUNC](16, np.array([0.0, 1.0]), np.array([5, 15]))
-        self.assertEqual(1, res)
+        self.assertEqual(1.0, res)
         res = test_concept[NODE_ACTV_FUNC](7, np.array([0.0, 0.5, 1.0]), np.array([5, 15, 20]))
         self.assertEqual(0.09999999999999998, res)
         res = test_concept[NODE_ACTV_FUNC](16, np.array([0.0, 0.5, 1.0]), np.array([5, 15, 20]))

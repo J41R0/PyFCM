@@ -201,7 +201,7 @@ def lower_cond_equality(val: float, weight=1.0) -> float:
 @njit
 def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
               val_list=np.empty(1, dtype=np.float64)) -> float:
-    # is assumed that the list of values (val_list) is sorted from lowest to gratest
+    # is assumed that the list of values (val_list) is sorted from lowest to greatest and with no repetitions
 
     negative_activation = False
     if 0.0 <= val_list.min() <= 1.0 and 0.0 <= val_list.max() <= 1.0 and value < 0.0:
@@ -212,7 +212,9 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
     prev_pos = 0
 
     # find nearest values index
-    index = (np.abs(val_list - value)).argmin()
+    index = np.searchsorted(val_list, value)
+    if index == val_list.size:
+        index = index - 1
     if val_list[index] == value:
         if not negative_activation:
             return membership[index]
