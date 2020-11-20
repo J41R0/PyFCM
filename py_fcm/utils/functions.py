@@ -443,22 +443,30 @@ class Excitation:
 
 class Decision:
     @staticmethod
-    def last(val_list: list) -> float:
+    def last(val_list: list, last_pos=0) -> float:
         # return last value
+        if last_pos > 0:
+            return val_list[last_pos]
         return val_list[-1]
 
     @staticmethod
-    def mean(val_list: list) -> float:
+    def mean(val_list: list, last_pos=0) -> float:
         # return average execution value
         result = 0
-        for elem in val_list:
-            result += elem
-        return result / len(val_list)
+        if last_pos <= 0:
+            last_pos = len(val_list) - 1
+        for elem_pos in range(last_pos + 1):
+            result += val_list[elem_pos]
+        return result / (last_pos + 1)
 
     @staticmethod
-    def exited(val_list: list) -> float:
+    def exited(val_list: list, last_pos=0) -> float:
         # return highest execution value
-        return max(val_list)
+        if last_pos >= 0:
+            res = val_list[:last_pos]
+        else:
+            res = val_list
+        return max(res)
 
     @staticmethod
     def get_by_name(func_name: str):
