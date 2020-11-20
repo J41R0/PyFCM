@@ -48,13 +48,15 @@ class AssociationBasedFCM:
     def __name_concept(self, feat_name, value):
         return str(value) + str(self.__str_separator) + str(feat_name)
 
-    def __gen_continuous_concepts(self, feat_name, target_feats):
+    def __gen_continuous_concepts(self, feat_name, target_feats, plot, plot_dir):
         if feat_name in target_feats:
             self.__features[feat_name][TYPE] = TYPE_REGRESOR
         else:
             self.__features[feat_name][TYPE] = TYPE_FUZZY
 
-        n_clusters, val_list, memberships = fuzzy_feature_discretization(self.__features[feat_name][NP_ARRAY_DATA])
+        n_clusters, val_list, memberships = fuzzy_feature_discretization(self.__features[feat_name][NP_ARRAY_DATA],
+                                                                         att_name=feat_name, plot=plot,
+                                                                         plot_dir=plot_dir)
         names = []
         for curr_cluster in range(n_clusters):
             concept_name = self.__name_concept(feat_name, curr_cluster)
@@ -134,7 +136,8 @@ class AssociationBasedFCM:
 
         self.__processed_features.add(feat_name)
 
-    def build_fcm(self, dataset: DataFrame, target_features=None, fcm=None) -> FuzzyCognitiveMap:
+    def build_fcm(self, dataset: DataFrame, target_features=None, fcm=None, plot=False,
+                  plot_dir='.') -> FuzzyCognitiveMap:
         # TODO: handle features multivalued and with missing values
         if fcm is not None and type(fcm) == FuzzyCognitiveMap:
             self.__fcm = fcm
@@ -146,20 +149,22 @@ class AssociationBasedFCM:
         for feat_name in dataset.loc[:, ]:
             self.__features[feat_name] = {NP_ARRAY_DATA: np.array(dataset.loc[:, feat_name].values)}
             # discrete features
-            if self.__features[feat_name][NP_ARRAY_DATA].dtype == np.object:
+            if dataset[feat_name].dtype == np.object:
                 self.__gen_discrete_concepts(feat_name, target_features)
 
             # continuous feature
-            elif self.__features[feat_name][NP_ARRAY_DATA].dtype == np.float64:
-                self.__gen_continuous_concepts(feat_name, target_features)
+            elif dataset[feat_name].dtype == np.float64:
+                self.__gen_continuous_concepts(feat_name, target_features, plot, plot_dir)
 
             else:
                 uniques_data = np.unique(self.__features[feat_name][NP_ARRAY_DATA], return_counts=True)
                 # frequency based node type inference
-                if (uniques_data[UNIQUE_ARRAY].size / self.__features[feat_name][NP_ARRAY_DATA].size) < 0.15:
+                if (uniques_data[UNIQUE_ARRAY].size / self.__features[feat_name][NP_ARRAY_DATA].size) <= 0.2:
                     self.__gen_discrete_concepts(feat_name, target_features, uniques_data)
                 else:
-                    self.__gen_continuous_concepts(feat_name, target_features)
+                    # self.__features[feat_name][NP_ARRAY_DATA] = self.__features[feat_name][NP_ARRAY_DATA].astype(
+                    #     np.float64)
+                    self.__gen_continuous_concepts(feat_name, target_features, plot, plot_dir)
 
             self.__def_feat_relations(feat_name)
 
@@ -171,7 +176,9 @@ class AssociationBasedFCM:
                 for concept in self.__features[feat_name][CONCEPT_NAMES]:
                     self.__fcm.init_concept(concept, value, required_presence=False)
             else:
-                self.__fcm.init_concept(self.__name_concept(feat_name, value), 1, required_presence=False)
+                if type(value) != str:
+                    value = int(value)
+                self.__fcm.init_concept(self.__name_concept(feat_name, value), 1.0, required_presence=False)
         except Exception:
             raise Exception("Cannot init concept")
 
@@ -197,7 +204,7 @@ class AssociationBasedFCM:
             final_result[feat_name] = result
         return final_result
 
-    def get_inference_result(self):
+    def get_inference_result(self, plot=False, map_name="fcm", plot_dir='.'):
         self.__fcm.run_inference()
         fcm_result = self.__fcm.get_final_state()
         cont_res_feat = defaultdict(list)
@@ -208,6 +215,7 @@ class AssociationBasedFCM:
                 cont_res_feat[feat_name].append((info, fcm_result[concept]))
             else:
                 disc_res_feat[feat_name].append((info, fcm_result[concept]))
-
+        if plot:
+            self.__fcm.plot_execution(fig_name=map_name, plot_dir=plot_dir)
         # TODO: handle continuous features output for regression problems
         return self.__get_discrete_feature_result(disc_res_feat)
