@@ -200,10 +200,10 @@ def __estimate_cluster_number(values: np.ndarray, max_clusters: int):
 
 
 def __def_num_clusters(data: np.array, max_clusters):
-    n_samples = data.size
-    values = np.copy(data)
+    values = np.unique(data)
+    n_samples = values.size
     values.sort()
-    poly = np.polyfit(range(n_samples), values, max_clusters)
+    poly = np.polyfit(list(range(n_samples)), values, max_clusters)
     func = np.poly1d(poly)
     image = func(np.linspace(0, data.size - 1, n_samples))
     if max_clusters >= data.size:
@@ -259,7 +259,7 @@ def fuzzy_feature_discretization(val_list, max_clusters=7, gen_init_state=True, 
     num_clusters = len(change_points[0]) - 1
     if num_clusters > 1:
         clusters_description, cntr = __define_clusters(sorted_input_values, num_clusters, change_points, gen_init_state,
-                                    strategy, max_iter, seed)
+                                                       strategy, max_iter, seed)
     else:
         max_val = sorted_input_values[-1]
         min_val = sorted_input_values[0]
