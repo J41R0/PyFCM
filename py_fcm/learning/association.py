@@ -150,6 +150,12 @@ class AssociationBasedFCM:
         return ((self.__is_target_concept(name_feat1) and self.__is_target_concept(name_feat2)) or
                 not self.__is_target_concept(name_feat1) and not self.__is_target_concept(name_feat2))
 
+    def __def_feat_target_relation(self, feat_name):
+        for other_feat in self.__processed_features:
+            if other_feat != feat_name and not self.__are_same_feature_group(feat_name, other_feat):
+                self.__def_two_feat_relation(feat_name, other_feat)
+        self.__processed_features.add(feat_name)
+
     def build_fcm(self, dataset: DataFrame, target_features=None, fcm=None, plot=False,
                   plot_dir='.') -> FuzzyCognitiveMap:
         # TODO: handle features multivalued and with missing values
