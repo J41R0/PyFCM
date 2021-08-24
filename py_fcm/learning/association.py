@@ -141,6 +141,12 @@ class AssociationBasedFCM:
 
         self.__processed_features.add(feat_name)
 
+    def __is_target_concept(self, feat_name):
+        if self.__features[feat_name][TYPE] == TYPE_REGRESOR or self.__features[feat_name][TYPE] == TYPE_DECISION:
+            return True
+        return False
+
+
     def build_fcm(self, dataset: DataFrame, target_features=None, fcm=None, plot=False,
                   plot_dir='.') -> FuzzyCognitiveMap:
         # TODO: handle features multivalued and with missing values
