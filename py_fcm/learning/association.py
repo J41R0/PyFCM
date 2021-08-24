@@ -146,6 +146,9 @@ class AssociationBasedFCM:
             return True
         return False
 
+    def __are_same_feature_group(self, name_feat1, name_feat2):
+        return ((self.__is_target_concept(name_feat1) and self.__is_target_concept(name_feat2)) or
+                not self.__is_target_concept(name_feat1) and not self.__is_target_concept(name_feat2))
 
     def build_fcm(self, dataset: DataFrame, target_features=None, fcm=None, plot=False,
                   plot_dir='.') -> FuzzyCognitiveMap:
