@@ -224,3 +224,8 @@ class AssociationBasedFCM:
             self.__fcm.plot_execution(fig_name=map_name, plot_dir=plot_dir)
         # TODO: handle continuous features output for regression problems
         return self.__get_discrete_feature_result(disc_res_feat)
+
+    def reset(self):
+        self.__features = {}
+        self.__processed_features = set()
+        self.__fcm.clear_all()
