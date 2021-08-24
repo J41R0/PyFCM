@@ -12,8 +12,10 @@ FUNC_SIGMOID_HIP = 4
 FUNC_FUZZY = 5
 # Greater conditional equality
 FUNC_GCEQ = 6
-# Greater conditional equality
+# Lesser conditional equality
 FUNC_LCEQ = 7
+# Rectified Linear Activation Modified
+FUNC_RELM = 8
 
 # relations const
 RELATION_DESTINY = 0
