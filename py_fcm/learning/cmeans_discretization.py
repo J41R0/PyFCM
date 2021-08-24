@@ -221,8 +221,11 @@ def __define_clusters(val_float_list, num_clusters, change_points, gen_init_stat
     if gen_init_state:
         # generating initial state for cluster iterations
         init_list = np.reshape(val_float_list, (len(val_float_list), 1))
-        # exclude last element
-        init_cntrs = np.reshape(change_points[1][:-1], (len(change_points[1]) - 1, 1))
+        # exclude last element if greater than 2
+        if len(change_points[1]) > 2:
+            init_cntrs = np.reshape(change_points[1][:-1], (len(change_points[1]) - 1, 1))
+        else:
+            init_cntrs = np.reshape(change_points[1], (len(change_points[1]), 1))
         # init_state = cdist(init_list, init_cntrs).T
         init_state = one_dimension_distance(init_list, init_cntrs)
 
@@ -235,7 +238,7 @@ def __define_clusters(val_float_list, num_clusters, change_points, gen_init_stat
 
 
 def fuzzy_feature_discretization(val_list, max_clusters=7, gen_init_state=True, max_iter=500, seed=None,
-                                 strategy="fuzzy", plot=False, att_name=None, plot_dir="."):
+                                 strategy="fuzzy", force_clusters=False, plot=False, att_name=None, plot_dir="."):
     """
       Estimate fuzzy clusters that define a continuous feature. Propose the amount of clusters to be used and return the
      membership degree of each provided point using fuzzy cmeans algorithm as kernel
@@ -247,6 +250,7 @@ def fuzzy_feature_discretization(val_list, max_clusters=7, gen_init_state=True, 
         max_iter:
         seed:
         strategy:
+        force_clusters:
         plot:
         att_name:
         plot_dir:
@@ -261,16 +265,21 @@ def fuzzy_feature_discretization(val_list, max_clusters=7, gen_init_state=True, 
         clusters_description, cntr = __define_clusters(sorted_input_values, num_clusters, change_points, gen_init_state,
                                                        strategy, max_iter, seed)
     else:
-        max_val = sorted_input_values[-1]
-        min_val = sorted_input_values[0]
-        clusters_description = np.zeros((1, sorted_input_values.size), dtype=np.float64)
-        for pos in range(sorted_input_values.size):
-            if min_val >= 0:
-                clusters_description[0][pos] = sorted_input_values[pos] / max_val
-            else:
-                clusters_description[0][pos] = (sorted_input_values[pos] + abs(min_val)) / (max_val + abs(min_val))
-        cntr = (max_val - abs(min_val)) / 2
-        num_clusters = 1
+        if force_clusters:
+            clusters_description, cntr = __define_clusters(sorted_input_values, 2, change_points, gen_init_state,
+                                                           strategy, max_iter, seed)
+            num_clusters = 2
+        else:
+            max_val = sorted_input_values[-1]
+            min_val = sorted_input_values[0]
+            clusters_description = np.zeros((1, sorted_input_values.size), dtype=np.float64)
+            for pos in range(sorted_input_values.size):
+                if min_val >= 0:
+                    clusters_description[0][pos] = sorted_input_values[pos] / max_val
+                else:
+                    clusters_description[0][pos] = (sorted_input_values[pos] + abs(min_val)) / (max_val + abs(min_val))
+            cntr = (max_val - abs(min_val)) / 2
+            num_clusters = 1
 
     if plot:
         # TODO: parametrize plot clusters and estimations
@@ -317,4 +326,4 @@ def fuzzy_feature_discretization(val_list, max_clusters=7, gen_init_state=True, 
 
 
 # ensure compilation
-fuzzy_feature_discretization(np.random.normal(0, 0.11, 8), att_name='test', plot=True, max_iter=2)
+# fuzzy_feature_discretization(np.random.normal(0, 0.11, 8), att_name='test', plot=True, max_iter=2)
