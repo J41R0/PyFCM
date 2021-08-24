@@ -69,6 +69,11 @@ def __exec_actv_function(function_id: int, val: float, args=np.empty(1, dtype=np
             return sigmoid_hip(val)
         else:
             return sigmoid_hip(val, lambda_val=args[0])
+    if function_id == FUNC_RELM:
+        if args.size == 0:
+            return relm(val)
+        else:
+            return relm(val, lambda_val=args[0])
     if function_id == FUNC_FUZZY:
         membership = args[:int(args.size / 2)]
         val_list = args[int(args.size / 2):]
@@ -147,6 +152,16 @@ def sigmoid_hip(val: float, lambda_val=2.0) -> float:
 @njit
 def sigmoid_hip_lambda(x: float, y: float) -> float:
     res = -(math.log((1 - y) / (1 + y)) / x)
+    return res
+
+
+@njit
+def relm(val: float, lambda_val=1.0) -> float:
+    if val < 0:
+        return 0
+    res = val / lambda_val
+    if res > 1:
+        return 1
     return res
 
 
@@ -284,6 +299,7 @@ sigmoid(10, 1.5)
 sigmoid_lambda(500, 0.8)
 sigmoid_hip(10)
 sigmoid_hip_lambda(500, 0.85)
+relm(5, 5)
 bistate(10)
 threestate(10)
 saturation(10)
@@ -330,6 +346,8 @@ class Activation:
             return greater_cond_equality
         if func_name == "lceq":
             return lower_cond_equality
+        if func_name == "relm":
+            return relm
         return None
 
     @staticmethod
@@ -354,6 +372,8 @@ class Activation:
             return FUNC_SIGMOID
         if func_name == "sigmoid_hip":
             return FUNC_SIGMOID_HIP
+        if func_name == "relm":
+            return FUNC_RELM
         if func_name == "fuzzy":
             return FUNC_FUZZY
         if func_name == "gceq":
@@ -376,6 +396,7 @@ class Activation:
         names.add("tan_hip")
         names.add("sigmoid")
         names.add("sigmoid_hip")
+        names.add("relm")
         names.add("gceq")
         names.add("lceq")
         names.add("proportion")
