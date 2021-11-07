@@ -11,7 +11,7 @@ from py_fcm.utils.functions import *
 class FuzzyCognitiveMap:
 
     def __init__(self, max_it=200, extra_steps=5, stabilize=True, stability_diff=0.001, decision_function="MEAN",
-                 mem_influence=False, activation_function="sigmoid_hip", **kwargs):
+                 mem_influence=True, activation_function="sigmoid_hip", **kwargs):
         """
         Fuzzy Cognitive Map Class, may be used like estimator.
         Args:
@@ -197,7 +197,7 @@ class FuzzyCognitiveMap:
                 self.__topology[concept_name][NODE_EXEC_FUNC] = function
                 self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = excitation_function
             else:
-                raise Exception("Unknown exitation function: " + excitation_function)
+                raise Exception("Unknown excitation function: " + excitation_function)
         else:
             self.__topology[concept_name][NODE_EXEC_FUNC] = self._default_concept[NODE_EXEC_FUNC]
             self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = self._default_concept[NODE_EXEC_FUNC_NAME]
@@ -244,7 +244,7 @@ class FuzzyCognitiveMap:
                 self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
                 vec_actv_funct_args = FuzzyCognitiveMap.__process_function_args(kwargs)
             else:
-                raise Exception("Unknown ativation function: " + activation_function)
+                raise Exception("Unknown activation function: " + activation_function)
         else:
             self.__topology[concept_name][NODE_ACTV_FUNC] = self._default_concept[NODE_ACTV_FUNC]
             self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self._default_concept[NODE_ACTV_FUNC_NAME]
@@ -267,7 +267,7 @@ class FuzzyCognitiveMap:
                     self.__topology[concept_name][NODE_EXEC_FUNC] = new_function
                     self.__topology[concept_name][NODE_EXEC_FUNC_NAME] = excitation_function
                 else:
-                    raise Exception("Unknown exitation function: " + excitation_function)
+                    raise Exception("Unknown excitation function: " + excitation_function)
             if concept_type is not None:
                 if is_valid_type(concept_type):
                     self.__topology[concept_name][NODE_TYPE] = concept_type
@@ -305,7 +305,7 @@ class FuzzyCognitiveMap:
                     self.__topology[concept_name][NODE_ACTV_FUNC_ARGS] = kwargs
                     vec_actv_funct_args = FuzzyCognitiveMap.__process_function_args(kwargs)
                 else:
-                    raise Exception("Unknown ativation function: " + activation_function)
+                    raise Exception("Unknown activation function: " + activation_function)
             else:
                 self.__topology[concept_name][NODE_ACTV_FUNC] = self.__map_activation_function
                 self.__topology[concept_name][NODE_ACTV_FUNC_NAME] = self.__activation_function
@@ -327,7 +327,7 @@ class FuzzyCognitiveMap:
             self._default_concept[NODE_EXEC_FUNC] = new_function
             self._default_concept[NODE_EXEC_FUNC_NAME] = excitation_function
         else:
-            raise Exception("Unknown exitation function: " + excitation_function)
+            raise Exception("Unknown excitation function: " + excitation_function)
         if is_valid_type(concept_type):
             self._default_concept[NODE_TYPE] = concept_type
         else:
@@ -393,6 +393,7 @@ class FuzzyCognitiveMap:
                 if self.__topology[destiny_concept][NODE_ACTV_FUNC_NAME] == "sigmoid":
                     new_lambda = sigmoid_lambda(abs(self.__topology[destiny_concept][NODE_ACTV_SUM]),
                                                 self.fit_inclination)
+
                 if self.__topology[destiny_concept][NODE_ACTV_FUNC_NAME] == "sigmoid_hip":
                     new_lambda = sigmoid_hip_lambda(abs(self.__topology[destiny_concept][NODE_ACTV_SUM]),
                                                     self.fit_inclination)
@@ -421,7 +422,7 @@ class FuzzyCognitiveMap:
         self.__arc_list = []
         self.__execution = {}
 
-    def init_concept(self, concept_name: str, value: float, required_presence=True):
+    def init_concept(self, concept_name: str, value, required_presence=True):
         """
 
         Set concept initial value, by default 1
@@ -537,6 +538,7 @@ class FuzzyCognitiveMap:
             self.__normalize_values = np.zeros(len(self.__topology), dtype=np.float64)
             self.__function_args = []
             self.__avoid_saturation = []
+
             for concept_pos in range(len(concepts)):
                 self.__state_vector[concept_pos] = self.__topology[concepts[concept_pos]][NODE_VALUE]
                 self.__functions[concept_pos] = Activation.get_const_by_name(
@@ -591,11 +593,11 @@ class FuzzyCognitiveMap:
         for node in self.__topology:
             self.__topology[node][NODE_VALUE] = self.__map_decision_function(self.__execution[node])
 
-    def get_final_state(self, concepts_type="target", names=[]):
+    def get_final_state(self, concept_type="target", names=[]):
         """
         Get inference result values of node_type or all nodes
         Args:
-            concepts_type: Type of nodes inference result
+            concept_type: Type of nodes inference result
                 "any": calc all nodes final state
                 "target": calc only DECISION or REGRESSION node types final state
             names: concept name list
