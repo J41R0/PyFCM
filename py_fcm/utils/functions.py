@@ -618,8 +618,7 @@ class Relation:
     def conf(p_q, p_nq, np_q, np_nq):
         if (p_q + p_nq) != 0:
             return p_q / (p_q + p_nq)
-        else:
-            return p_q
+        return 0
 
     # lift
     @staticmethod
@@ -663,6 +662,15 @@ class Relation:
             return pos_inf
         if pos_inf < neg_inf:
             return -1 * neg_inf
+        return 0
+
+    @staticmethod
+    def bayes(p_q, p_nq, np_q, np_nq):
+        total = p_q + p_nq + np_q + np_nq
+        prob_p = (p_q + p_nq) / total
+        prob_q = (p_q + np_q) / total
+        if p_q > np_q:
+            return (((p_q - np_q) / total) * prob_q) / prob_p
         return 0
 
     @staticmethod
