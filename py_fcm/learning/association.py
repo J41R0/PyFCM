@@ -1,3 +1,4 @@
+import warnings
 from collections import defaultdict
 
 from pandas import DataFrame
@@ -26,24 +27,30 @@ Q_P_COEFF = 1
 
 
 class AssociationBasedFCM:
-    def __init__(self, str_separator="___", fit_inclination=False, exclusion_val=-1, causality_function=Relation.conf,
-                 causal_eval_function=Relation.conf, causal_threshold=0, sign_function=None, sign_threshold=0):
+    def __init__(self, str_separator="___", discretization="cmeans-gap", exclusion_val=-1, fit_inclination=True,
+                 double_relation=True, features_relation=True, causality_function=Relation.conf,
+                 causal_eval_function=Relation.conf, causal_threshold=0.0, min_supp=0.0, sign_function=None,
+                 sign_threshold=0):
         self.__features = {}
         self.__processed_features = set()
 
         # vars
         self.__fcm = FuzzyCognitiveMap()
-        self.__processed_features = set()
         self.__exclusion_val = exclusion_val
         self.__causality_value_function = causality_function
         self.__causality_evaluation_function = causal_eval_function
         self.__causal_threshold = causal_threshold
+        self.__min_support = min_supp
         self.__sign_function = sign_function
         self.__sign_function_cut_val = sign_threshold
         self.__str_separator = str_separator
+        self.__double_relation = double_relation
+        self.__features_relation = features_relation
+        self.__discretization_method = discretization
 
         if fit_inclination:
-            self.__fcm.fit_inclination = 0.975
+            self.__fcm.fit_inclination = 0.75
+        self.infer_concept_type = True
 
     def __name_concept(self, feat_name, value):
         return str(value) + str(self.__str_separator) + str(feat_name)
@@ -58,6 +65,7 @@ class AssociationBasedFCM:
                                                                          att_name=feat_name, plot=plot,
                                                                          plot_dir=plot_dir)
         names = []
+        final_membership = np.zeros((n_clusters, self.__features[feat_name][NP_ARRAY_DATA].size))
         for curr_cluster in range(n_clusters):
             concept_name = self.__name_concept(feat_name, curr_cluster)
             names.append(concept_name)
@@ -65,9 +73,14 @@ class AssociationBasedFCM:
                         'val_list': val_list}
             self.__fcm.add_concept(concept_name, self.__features[feat_name][TYPE], is_active=True,
                                    activation_dict=fun_args)
+            for val_pos in range(self.__features[feat_name][NP_ARRAY_DATA].size):
+                curr_value = self.__features[feat_name][NP_ARRAY_DATA][val_pos]
+                final_membership[curr_cluster][val_pos] = fuzzy_set(value=curr_value,
+                                                                    membership=fun_args['membership'],
+                                                                    val_list=fun_args['val_list'])
 
         self.__features[feat_name][CONCEPT_NAMES] = names
-        self.__features[feat_name][CONCEPT_DESC] = ([i for i in range(n_clusters)], memberships)
+        self.__features[feat_name][CONCEPT_DESC] = ([i for i in range(n_clusters)], final_membership)
 
     def __gen_discrete_concepts(self, feat_name, target_feats, uniques_data=None):
         if feat_name in target_feats:
@@ -89,7 +102,8 @@ class AssociationBasedFCM:
         self.__features[feat_name][CONCEPT_DESC] = (uniques_data[UNIQUE_ARRAY], feat_matrix)
 
     def __def_inner_feat_relations(self, feat_name):
-        if self.__features[feat_name][TYPE] == TYPE_SIMPLE or self.__features[feat_name][TYPE] == TYPE_DECISION:
+        # FIXME: This function only works for fuzzy and discrete features, use the function type instead.
+        if self.__exclusion_val != 0:
             related_concepts = self.__features[feat_name][CONCEPT_DESC][FEATURE_CONCEPTS]
             for concept1_pos in range(len(related_concepts) - 1):
                 for concept2_pos in range(concept1_pos + 1, len(related_concepts)):
@@ -189,24 +203,34 @@ class AssociationBasedFCM:
         for feat_name in dataset.loc[:, ]:
             self.__features[feat_name] = {NP_ARRAY_DATA: np.array(dataset.loc[:, feat_name].values)}
             # discrete features
-            if dataset[feat_name].dtype == np.object:
+            # TODO: extend to categorical series
+            if dataset[feat_name].dtype == np.object or dataset[feat_name].dtype == np.bool:
                 self.__gen_discrete_concepts(feat_name, target_features)
 
-            # continuous feature
-            elif dataset[feat_name].dtype == np.float64:
-                self.__gen_continuous_concepts(feat_name, target_features, plot, plot_dir)
-
-            else:
+            # possible continuous feature
+            elif self.infer_concept_type:
                 uniques_data = np.unique(self.__features[feat_name][NP_ARRAY_DATA], return_counts=True)
-                # frequency based node type inference
-                if (uniques_data[UNIQUE_ARRAY].size / self.__features[feat_name][NP_ARRAY_DATA].size) <= 0.2:
+                if uniques_data[UNIQUE_ARRAY].size < 10:
                     self.__gen_discrete_concepts(feat_name, target_features, uniques_data)
                 else:
-                    # self.__features[feat_name][NP_ARRAY_DATA] = self.__features[feat_name][NP_ARRAY_DATA].astype(
-                    #     np.float64)
+                    # TODO: review type inference
+                    if (uniques_data[UNIQUE_ARRAY].size / self.__features[feat_name][NP_ARRAY_DATA].size) > 0.2:
+                        warnings.warn("Possible discrete feature behavior for " + feat_name + " feature.")
+                    self.__features[feat_name][NP_ARRAY_DATA] = self.__features[feat_name][
+                        NP_ARRAY_DATA].astype(
+                        np.float64)
                     self.__gen_continuous_concepts(feat_name, target_features, plot, plot_dir)
+            else:
+                self.__gen_continuous_concepts(feat_name, target_features, plot, plot_dir)
 
-            self.__def_feat_relations(feat_name)
+            # TODO: identify feature type to define the inner concept's relation properly
+            self.__def_inner_feat_relations(feat_name)
+            self.__processed_features.add(feat_name)
+
+            if self.__features_relation:
+                self.__def_all_feat_relations(feat_name)
+            else:
+                self.__def_feat_target_relation(feat_name)
 
         return self.__fcm
 
