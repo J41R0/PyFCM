@@ -29,7 +29,7 @@ Q_P_COEFF = 1
 class AssociationBasedFCM:
     def __init__(self, str_separator="___", discretization="cmeans-gap", exclusion_val=-1, fit_inclination=True,
                  double_relation=True, features_relation=True, causality_function=Relation.conf,
-                 causal_eval_function=Relation.conf, causal_threshold=0.0, min_supp=0.0, sign_function=None,
+                 causal_eval_function=Relation.supp, causal_threshold=0.0, sign_function=None,
                  sign_threshold=0):
         self.__features = {}
         self.__processed_features = set()
@@ -40,7 +40,6 @@ class AssociationBasedFCM:
         self.__causality_value_function = causality_function
         self.__causality_evaluation_function = causal_eval_function
         self.__causal_threshold = causal_threshold
-        self.__min_support = min_supp
         self.__sign_function = sign_function
         self.__sign_function_cut_val = sign_threshold
         self.__str_separator = str_separator
@@ -118,7 +117,7 @@ class AssociationBasedFCM:
     def __def_relation_weight(self, feat_name_a, concept_a_pos, feat_name_b, concept_b_pos, sign, p_q, p_nq, np_q,
                               np_nq):
         causality_p_q = self.__causality_evaluation_function(p_q, p_nq, np_q, np_nq)
-        if abs(causality_p_q) > self.__causal_threshold and abs(causality_p_q) > self.__min_support:
+        if abs(causality_p_q) > self.__causal_threshold:
             relation_weight = sign * self.__causality_value_function(p_q, p_nq, np_q, np_nq)
             if relation_weight != 0:
                 self.__fcm.add_relation(self.__features[feat_name_a][CONCEPT_NAMES][concept_a_pos],
