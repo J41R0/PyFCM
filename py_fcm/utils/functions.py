@@ -5,7 +5,7 @@ import numpy as np
 from numba.typed import List
 from numba import njit
 
-from py_fcm.__const import *
+from py_fcm.utils.__const import *
 
 
 @njit
@@ -69,6 +69,11 @@ def __exec_actv_function(function_id: int, val: float, args=np.empty(1, dtype=np
             return sigmoid_hip(val)
         else:
             return sigmoid_hip(val, lambda_val=args[0])
+    if function_id == FUNC_RELM:
+        if args.size == 0:
+            return relm(val)
+        else:
+            return relm(val, lambda_val=args[0])
     if function_id == FUNC_FUZZY:
         membership = args[:int(args.size / 2)]
         val_list = args[int(args.size / 2):]
@@ -151,6 +156,16 @@ def sigmoid_hip_lambda(x: float, y: float) -> float:
 
 
 @njit
+def relm(val: float, lambda_val=1.0) -> float:
+    if val < 0:
+        return 0
+    res = val / lambda_val
+    if res > 1:
+        return 1
+    return res
+
+
+@njit
 def saturation(val: float) -> float:
     if val < 0:
         return 0.0
@@ -201,7 +216,7 @@ def lower_cond_equality(val: float, weight=1.0) -> float:
 @njit
 def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
               val_list=np.empty(1, dtype=np.float64)) -> float:
-    # is assumed that the list of values (val_list) is sorted from lowest to gratest
+    # is assumed that the list of values (val_list) is sorted from lowest to greatest and with no repetitions
 
     negative_activation = False
     if 0.0 <= val_list.min() <= 1.0 and 0.0 <= val_list.max() <= 1.0 and value < 0.0:
@@ -212,7 +227,9 @@ def fuzzy_set(value: float, membership=np.empty(1, dtype=np.float64),
     prev_pos = 0
 
     # find nearest values index
-    index = (np.abs(val_list - value)).argmin()
+    index = np.searchsorted(val_list, value)
+    if index == val_list.size:
+        index = index - 1
     if val_list[index] == value:
         if not negative_activation:
             return membership[index]
@@ -282,6 +299,7 @@ sigmoid(10, 1.5)
 sigmoid_lambda(500, 0.8)
 sigmoid_hip(10)
 sigmoid_hip_lambda(500, 0.85)
+relm(5, 5)
 bistate(10)
 threestate(10)
 saturation(10)
@@ -328,6 +346,8 @@ class Activation:
             return greater_cond_equality
         if func_name == "lceq":
             return lower_cond_equality
+        if func_name == "relm":
+            return relm
         return None
 
     @staticmethod
@@ -352,6 +372,8 @@ class Activation:
             return FUNC_SIGMOID
         if func_name == "sigmoid_hip":
             return FUNC_SIGMOID_HIP
+        if func_name == "relm":
+            return FUNC_RELM
         if func_name == "fuzzy":
             return FUNC_FUZZY
         if func_name == "gceq":
@@ -374,6 +396,7 @@ class Activation:
         names.add("tan_hip")
         names.add("sigmoid")
         names.add("sigmoid_hip")
+        names.add("relm")
         names.add("gceq")
         names.add("lceq")
         names.add("proportion")
@@ -443,22 +466,30 @@ class Excitation:
 
 class Decision:
     @staticmethod
-    def last(val_list: list) -> float:
+    def last(val_list: list, last_pos=0) -> float:
         # return last value
+        if last_pos > 0:
+            return val_list[last_pos]
         return val_list[-1]
 
     @staticmethod
-    def mean(val_list: list) -> float:
+    def mean(val_list: list, last_pos=0) -> float:
         # return average execution value
         result = 0
-        for elem in val_list:
-            result += elem
-        return result / len(val_list)
+        if last_pos <= 0:
+            last_pos = len(val_list) - 1
+        for elem_pos in range(last_pos + 1):
+            result += val_list[elem_pos]
+        return result / (last_pos + 1)
 
     @staticmethod
-    def exited(val_list: list) -> float:
+    def exited(val_list: list, last_pos=0) -> float:
         # return highest execution value
-        return max(val_list)
+        if last_pos >= 0:
+            res = val_list[:last_pos]
+        else:
+            res = val_list
+        return max(res)
 
     @staticmethod
     def get_by_name(func_name: str):
@@ -587,8 +618,7 @@ class Relation:
     def conf(p_q, p_nq, np_q, np_nq):
         if (p_q + p_nq) != 0:
             return p_q / (p_q + p_nq)
-        else:
-            return p_q
+        return 0
 
     # lift
     @staticmethod
@@ -632,6 +662,15 @@ class Relation:
             return pos_inf
         if pos_inf < neg_inf:
             return -1 * neg_inf
+        return 0
+
+    @staticmethod
+    def bayes(p_q, p_nq, np_q, np_nq):
+        total = p_q + p_nq + np_q + np_nq
+        prob_p = (p_q + p_nq) / total
+        prob_q = (p_q + np_q) / total
+        if p_q > np_q:
+            return (((p_q - np_q) / total) * prob_q) / prob_p
         return 0
 
     @staticmethod

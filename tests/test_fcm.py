@@ -1,5 +1,5 @@
-import unittest
 import json
+import unittest
 from py_fcm import FuzzyCognitiveMap, TYPE_DECISION, TYPE_FUZZY, TYPE_SIMPLE
 
 
@@ -106,7 +106,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
                           'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}]
         }
         self.fcm.add_concept('test', is_active=False, concept_type=TYPE_DECISION, use_memory=True,
-                             exitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.3)
+                             excitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.3)
         json_fcm = json.loads(self.fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
 
@@ -116,7 +116,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
                           'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}]
         }
         self.fcm.set_default_concept_properties(concept_type=TYPE_DECISION, use_memory=True,
-                                                exitation_function='PAPAGEORGIUS', activation_function='gceq',
+                                                excitation_function='PAPAGEORGIUS', activation_function='gceq',
                                                 weight=0.3)
         self.fcm.add_concept('test')
         json_fcm = json.loads(self.fcm.to_json())
@@ -130,7 +130,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
         json_fcm = json.loads(self.fcm.to_json())
         self.assertEqual(expected_json["concepts"], json_fcm["concepts"])
         self.fcm.set_concept_properties('test', is_active=False, concept_type=TYPE_DECISION, use_memory=True,
-                                        exitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.3)
+                                        excitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.3)
         expected_json = {
             "concepts": [{'id': 'test', 'is_active': False, 'type': 'DECISION', 'activation': 0.0, 'use_memory': True,
                           'custom_function': 'gceq', 'custom_function_args': {'weight': 0.3}}]
@@ -392,7 +392,7 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
                                                                           'val_list': [1.0, 2.0, 3.0, 4.0, 5.0]}}]
         }
 
-        fcm = FuzzyCognitiveMap(activ_function='sigmoid')
+        fcm = FuzzyCognitiveMap(activation_function='sigmoid')
 
         fcm.add_concept('r1', TYPE_DECISION)
         fcm.add_concept('r2', TYPE_DECISION)
@@ -444,12 +444,12 @@ class FuzzyCognitiveMapTests(unittest.TestCase):
 
         fcm = self.__init_complex_fcm()
         fcm.add_concept('result_1', concept_type=TYPE_DECISION, use_memory=True,
-                        exitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.003)
+                        excitation_function='PAPAGEORGIUS', activation_function='gceq', weight=0.003)
 
         fcm.add_concept('result_2', concept_type=TYPE_DECISION, use_memory=True,
-                        exitation_function='PAPAGEORGIUS', activation_function='sigmoid', lambda_val=10)
+                        excitation_function='PAPAGEORGIUS', activation_function='sigmoid', lambda_val=10)
 
-        fcm.add_concept('input_1', use_memory=True, exitation_function='PAPAGEORGIUS',
+        fcm.add_concept('input_1', use_memory=True, excitation_function='PAPAGEORGIUS',
                         activation_function='threestate')
         fcm.init_concept('input_1', 0.59)
         fcm.run_inference()

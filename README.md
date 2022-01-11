@@ -26,7 +26,7 @@ fcm_json = """{
                     {
                         "id": "concept_2", "is_active": True,
                         "type": "DECISION", "activation": 0.0,
-                        "custom_function": "sum_w",
+                        "custom_function": "gceq",
                         "custom_function_args": {"weight": 0.3}
                     },
                     {
