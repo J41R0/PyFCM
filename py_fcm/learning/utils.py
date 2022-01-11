@@ -35,7 +35,7 @@ def one_dimension_distance(data: np.ndarray, centers: np.ndarray):
     res = np.empty((len(centers), len(data)), dtype=np.float64)
     for c_pos in range(len(centers)):
         for d_pos in range(len(data)):
-            res[c_pos][d_pos] = float(abs(data[d_pos][0] - centers[c_pos][0]))
+            res[c_pos][d_pos] = np.linalg.norm(data[d_pos] - centers[c_pos])
     return res
 
 
