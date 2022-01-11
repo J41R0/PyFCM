@@ -6,7 +6,7 @@ from pandas import DataFrame
 from py_fcm.utils.__const import *
 from py_fcm.learning.utils import *
 from py_fcm.fcm import FuzzyCognitiveMap
-from py_fcm.utils.functions import Relation
+from py_fcm.utils.functions import Relation, fuzzy_set
 from py_fcm.learning.cmeans_discretization import fuzzy_feature_discretization
 
 # USED CONST DEFINITION
