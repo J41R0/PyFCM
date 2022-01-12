@@ -12,8 +12,10 @@ FUNC_SIGMOID_HIP = 4
 FUNC_FUZZY = 5
 # Greater conditional equality
 FUNC_GCEQ = 6
-# Greater conditional equality
+# Lesser conditional equality
 FUNC_LCEQ = 7
+# Rectified Linear Activation Modified
+FUNC_RELM = 8
 
 # relations const
 RELATION_DESTINY = 0
@@ -26,7 +28,7 @@ NODE_ARCS = "current node outgoing arcs"
 NODE_TYPE = "type of node"
 NODE_VALUE = "current node value"
 NODE_USE_MEM = "use memory in current node execution"
-NODE_MAX_ACTV = "maximum node activation input value"
+NODE_ACTV_SUM = "maximum node activation input value"
 NODE_AUX = "auxiliary influence value list for new value calculation"
 NODE_USE_MAP_FUNC = "use map activation function"
 NODE_EXEC_FUNC = "custom execution function"
