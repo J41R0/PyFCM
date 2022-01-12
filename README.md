@@ -1,13 +1,34 @@
-# py-fcm
-Fuzzy cognitive maps python library
+# PyFCM
+Fuzzy cognitive maps python library. Also, supports the topology generation from data to solve classification problems.
+The details associated to the generation process are described in [this paper](https://link.springer.com/chapter/10.1007/978-3-030-89691-1_25). 
+### Installation
 
-###Example usage
+#### From source:
 
+1. Clone repository:
+    ```
+    $ git clone https://github.com/J41R0/PyFCM.git 
+    $ cd PyFCM
+    ```
+2. Install setup tools and package:
+    ```
+    $ pip install setuptools
+    $ python setup.py install
+    ```
+#### From PyPi:
+1. Install package using pip:
+    ```
+    $ pip install py-fcm
+    ```
+   
+### Example usage
+
+#### Inference:
 ```
 from py_fcm import from_json
 
 fcm_json = """{
-         "max_iter": 500,
+            "max_iter": 500,
             "decision_function": "LAST",
             "activation_function": "sigmoid",
             "memory_influence": False,
@@ -54,6 +75,29 @@ fcm_json = """{
         """
 my_fcm = from_json(fcm_json)
 my_fcm.run_inference()
-result = my_fcm.get_result_by_type(node_type='any')
+result = my_fcm.get_final_state(concept_type='any')
 print(result)
+```
+
+#### Generation:
+```
+import pandas
+from py_fcm import FcmEstimator
+
+data_dict = {
+   'F1': ['x', 'x', 'y', 'y'],
+   'F2': [9.8, 7.3, 1.1, 3.6],
+   'class': ['a', 'a', 'r', 'r']
+}
+    
+ train = pandas.DataFrame(data_dict)
+ x_train = train.loc[:, train.columns != 'class']
+ y_train = train.loc[:, 'class']
+
+ estimator = FcmEstimator()
+ estimator.fit(x_train, y_train)
+ print(estimator.predict(x_train))
+ print("Accuracy: ",estimator.score(x_train, y_train))
+ print(estimator.get_fcm().to_json())
+
 ```
